@@ -40,12 +40,12 @@ models:
     +database: apothecaries
     staging:
       +materialized: view
-      +schema: staging
+      +schema: costs_staging
     intermediate:
       +materialized: ephemeral
     marts:
       +materialized: table
-      +schema: marts
+      +schema: costs_marts
     # Reference solutions for the procurement lab — parsed but never built.
     # Enable a single model locally to run/compare (e.g. `dbt build -s dim_suppliers`
     # with `+enabled: true`), but keep the folder disabled on main.
@@ -61,3 +61,7 @@ seeds:
     # dual timestamp formats, messy booleans) survive intact — staging does
     # the cleaning. This mirrors how a real raw landing zone behaves.
     +quote_columns: false
+
+
+on-run-end:
+  - "{{ transfer_object_ownership(target_role=env_var('DBT_OWNERSHIP_TARGET_ROLE')) }}"
