@@ -1496,3 +1496,378 @@ Success means:
 - the fix is clear and demonstrable
 - the answer key is structurally cleaner than the bad state
 - the training can be reset between sessions without manual heroics
+
+
+## Final decision: messy refactor lab model
+
+The net-new messy refactor lab model is now decided.
+
+### Chosen lab model
+
+Use:
+
+- `models/marts/fct_wizard_order_behavior.sql`
+
+Reason this is the winner:
+
+- it stays within a single business story: customer/order behavior
+- it avoids crossing into other domains such as procurement, which would dilute the teaching focus
+- it is realistic as a rushed “one-stop analytics mart” that teams often create under deadline pressure
+- it supports a clean symptom-to-optimization mapping for the workshop
+
+This is important for the training design. Even though real projects often contain models with multiple overlapping issues, this workshop should keep each hands-on example focused enough that attendees can clearly connect the symptom they see to the dbt optimization being applied.
+
+### Intended business purpose
+
+`fct_wizard_order_behavior` should represent a customer behavior mart used for commercial or lifecycle analysis.
+
+Example question types it should support:
+
+- how often does each wizard order
+- how much has each wizard spent over time
+- what potion categories does each wizard prefer
+- which customers are guild members and how does that affect behavior
+- which customers show refund or split-payment behavior
+- which channels does each customer use most often
+
+### Intended grain
+
+The final intended grain should be:
+
+- one row per `customer_id`
+
+This makes the refactor more teachable because the bad-state version can be sloppy about how that grain is achieved, while the answer-key version makes the grain explicit through modular design.
+
+### Planned bad-state characteristics
+
+The bad-state `fct_wizard_order_behavior` model should intentionally be a giant, multi-responsibility mart with characteristics like:
+
+- one oversized SQL file
+- nested CTEs
+- repeated joins and repeated calculations
+- customer, order, payment, and potion logic all combined in one place
+- mixed grains handled inline rather than explicitly
+- category logic and payment logic embedded directly in the mart
+- difficult-to-follow calculations and weak separation of concerns
+
+The goal is to create a model that is:
+
+- expensive to execute
+- hard to reason about
+- awkward to validate
+- clearly a candidate to be split into multiple dbt models
+
+### Refactored answer-key shape
+
+The optimized end state should live in `models/answer_key/` and should be split into:
+
+#### 1. `models/answer_key/intermediate/int_wizard_order_behavior_base.sql`
+
+Purpose:
+
+- customer-grain behavioral rollup based on orders and payments
+
+Expected contents:
+
+- lifetime order count
+- lifetime net revenue
+- average order value
+- latest order date
+- refund and split-payment behavior summaries
+- channel usage summaries as appropriate
+
+#### 2. `models/answer_key/intermediate/int_wizard_potion_preferences.sql`
+
+Purpose:
+
+- customer-grain preference rollup based on line items and potion attributes
+
+Expected contents:
+
+- total units purchased
+- favorite potion category
+- regulated-potion behavior flags or counts
+- other item-level preference features as needed
+
+#### 3. `models/answer_key/marts/fct_wizard_order_behavior.sql`
+
+Purpose:
+
+- final presentation-ready customer behavior mart
+
+Expected contents:
+
+- joins the two customer-grain intermediates
+- joins in customer and guild attributes as needed
+- keeps the final mart focused on presentation and governed output, rather than redoing all transformation logic inline
+
+### Documentation expectation for the answer key
+
+The answer-key version of this lab should include model documentation that explains:
+
+- why the original model was too broad and too expensive
+- how the grain was clarified during the refactor
+- why the logic was split into these specific intermediate models
+- what responsibilities belong in each intermediate versus the final mart
+- how the refactor improves both maintainability and cost/performance
+
+This documentation can live in standard dbt YAML descriptions and, if helpful, a short supporting note in `models/answer_key/README.md`.
+
+### Workshop usage notes
+
+This lab should support two facilitation modes:
+
+1. **refactor by hand together** if time allows
+2. **use Wizard to assist with decomposition** if the session is moving quickly or the focus is more on workflow than typing
+
+Either way, the target shape should remain the same:
+
+- 2 intermediate models with explicit responsibilities and grain
+- 1 final mart at customer grain
+
+### Output themes for the lab model
+
+The model should expose a believable set of customer behavior fields, likely including some combination of:
+
+- customer identity and profile attributes
+- guild or membership attributes
+- first/latest order dates
+- days since last order
+- lifetime order count
+- lifetime net revenue
+- average order value
+- total units purchased
+- favorite potion category
+- regulated potion purchase behavior
+- refund-related behavior
+- split-payment behavior
+- channel mix or counts
+
+The exact column list can be finalized during implementation, but it should be rich enough to justify the split into the two intermediate models above.
+
+
+## Documentation standard for every workshop artifact
+
+To keep the training aligned, reproducible, and inheritable, every model-level demo should be treated as a complete artifact set rather than just a SQL change.
+
+### Required deliverables for every model demo
+
+For each intentionally bad example we build in `models/`:
+
+1. **before-state model** in the main project DAG
+   - under `models/marts/` or `models/intermediate/` as appropriate
+2. **optimized after-state model** in `models/answer_key/`
+   - using the same business purpose with improved design/configuration
+3. **companion markdown documentation** for that model
+   - named `<model_name>.md`
+   - explaining the symptom, fix, reasoning, expected benefit, and comparison workflow
+
+This applies to every major demo model, including but not limited to:
+
+- `dim_wizards`
+- `fct_orders`
+- `int_orders_with_payments`
+- `fct_order_items` if used for the clustering module
+- `fct_wizard_order_behavior`
+- any future optional demo models added later
+
+### Required contents of each `<model_name>.md`
+
+Each companion markdown file should document:
+
+- what the symptom is
+- what the root cause is
+- how the issue was identified
+- what dbt optimization was applied
+- why that fix was the right one
+- how the fix was implemented
+- what the expected benefit is
+- how to compare the before-state and after-state versions in the workshop
+- what prevention or governance lesson should be carried forward
+
+These files are part of the training deliverable, not optional extras. They will help:
+
+- align the repo to the slide deck and live narration
+- support handoff to a co-trainer
+- support substitution if another presenter has to step in
+- preserve the rationale behind the answer-key implementations
+
+### Required job documentation
+
+The jobs section should follow the same principle.
+
+Need:
+
+- before-state job definitions in dbt
+- after-state job definitions or updated configurations in dbt
+- one `jobs.md` document that explains:
+  - the purpose of each job
+  - the bad-state configuration/commands
+  - the optimized configuration/commands
+  - what symptom the job design creates
+  - what changed and why
+  - what the expected runtime/cost/operability improvement is
+  - how to compare the before and after job behavior during training
+
+Recommended location:
+
+- `docs/jobs.md`
+
+## Next build phase: data foundation
+
+The next implementation step is to build the data foundation that supports the major demos.
+
+### Current baseline
+
+The current commerce seed files are now stored in the large training dataset and provide a solid foundation for the cost optimization workshop:
+
+- `seeds/large_data/abra_pos/raw_orders.csv` is ~75k rows
+- `seeds/large_data/abra_pos/raw_order_items.csv` is ~253k rows
+- `seeds/large_data/abra_pos/raw_payments.csv` is ~86k rows
+
+This is now a good base size for the workshop. It is large enough to make the optimization stories believable without making setup and reset unnecessarily heavy.
+
+### Data-foundation goals
+
+The expanded training data should support all of the following:
+
+1. a visibly more expensive full rebuild of `fct_orders`
+2. a meaningful incremental build improvement on `fct_orders`
+3. a realistic late-arriving update pattern for the churn/write-amplification lesson
+4. a materially larger `fct_order_items` fact for the pruning/clustering lesson
+5. enough row volume that the messy refactor lab also feels plausibly expensive
+
+### Recommended data-foundation strategy
+
+#### 1. Use `seeds/large_data/` as the stable base dataset
+
+The stable workshop seed foundation should remain in:
+
+- `seeds/large_data/abra_pos/raw_orders.csv`
+- `seeds/large_data/abra_pos/raw_order_items.csv`
+- `seeds/large_data/abra_pos/raw_payments.csv`
+
+Recommended characteristics of the base history:
+
+- enough dates and row volume to make the cost and runtime stories believable
+- realistic distributions by shop, channel, and potion SKU
+- enough split payments, failed attempts, and refunds to support both join-health and incremental-update lessons
+
+Guiding principle:
+
+- keep the same semantic shape the models already expect
+- make the data larger and more varied, not structurally different
+
+#### 2. Use trainer-run Snowflake DML scripts for incremental demo events
+
+For the workshop, attendees do not need to seed or reseed batch files themselves. They will build into their own schemas against trainer-managed shared source data.
+
+That means the cleanest approach is:
+
+- keep `seeds/large_data/` as the stable source-data baseline
+- have trainers apply new source records directly in Snowflake before attendees trigger their rebuilds
+- use those source changes to drive the incremental and churn demos
+
+This more closely matches the real workflow we want to teach:
+
+1. source data changes upstream
+2. downstream dbt models rebuild in user schemas
+3. incremental logic determines what gets processed
+
+#### 3. Store trainer-run Snowflake scripts in `training_assets/snowflake_scripts/`
+
+Recommended training asset location:
+
+- `training_assets/snowflake_scripts/`
+
+Required scripts:
+
+- `01_append_orders_batch.sql`
+- `02_late_payment_updates.sql`
+- `03_reset_demo_state.sql`
+
+Purpose of each script:
+
+- `01_append_orders_batch.sql`
+  - inserts brand-new orders, matching order items, and matching payments
+  - supports the clean append-only incremental demo
+- `02_late_payment_updates.sql`
+  - inserts late-arriving payment/refund-related records tied to existing order IDs
+  - supports the lesson that naive incremental logic may miss changed historical business state or cause excessive churn
+- `03_reset_demo_state.sql`
+  - removes trainer-added demo rows and restores the shared raw source tables to the expected baseline before the next session
+
+Preferred design principle:
+
+- for late updates, prefer inserting new source events tied to existing orders over mutating old raw records in place
+- this is more realistic for event-style ingestion and makes the downstream incremental lesson cleaner
+
+#### 4. Bias the base data and DML events toward the planned demos
+
+The training data should not just be larger; it should make the workshop easier to teach.
+
+For `fct_orders` incremental and churn:
+
+- the base dataset should already contain realistic append-style order history
+- `01_append_orders_batch.sql` should add clearly new orders and their downstream line/payment records
+- `02_late_payment_updates.sql` should add a small but meaningful number of late-arriving events affecting existing order IDs
+
+For `fct_order_items` pruning/clustering:
+
+- the base dataset should preserve strong date, shop, and potion-level filtering opportunities
+- repeated workload queries should make it possible to identify likely pruning/clustering candidates from usage patterns
+
+For `int_orders_with_payments` join health:
+
+- the base dataset should preserve enough split-payment and multi-line-order behavior that fanout mistakes become visible quickly
+
+### Recommended data build outputs
+
+The data-foundation phase should produce at least the following artifacts:
+
+#### Active base seed set
+
+- `seeds/large_data/abra_pos/raw_orders.csv`
+- `seeds/large_data/abra_pos/raw_order_items.csv`
+- `seeds/large_data/abra_pos/raw_payments.csv`
+
+#### Trainer-run Snowflake scripts
+
+- `training_assets/snowflake_scripts/01_append_orders_batch.sql`
+- `training_assets/snowflake_scripts/02_late_payment_updates.sql`
+- `training_assets/snowflake_scripts/03_reset_demo_state.sql`
+
+#### Documentation
+
+Need a short trainer-facing data-setup note that explains:
+
+- what the large base dataset contains
+- when to run each Snowflake script
+- what each script changes in the raw source data
+- how to reset the shared source tables back to baseline
+- which demos depend on which scripts
+
+Recommended location:
+
+- `docs/demo_data.md`
+
+### Recommended next implementation tasks for data foundation
+
+1. confirm `seeds/large_data/` as the stable workshop seed baseline
+2. create `training_assets/snowflake_scripts/01_append_orders_batch.sql`
+3. create `training_assets/snowflake_scripts/02_late_payment_updates.sql`
+4. create `training_assets/snowflake_scripts/03_reset_demo_state.sql`
+5. document the trainer reset/apply flow in `docs/demo_data.md`
+
+### Reminder: data foundation unlocks the rest of the build
+
+Once the large base seed history and trainer-run Snowflake scripts are in place, we can build the highest-priority demo models with confidence:
+
+- `fct_orders`
+- `int_orders_with_payments`
+- `dim_wizards`
+- `fct_order_items`
+- `fct_wizard_order_behavior`
+
+That is the right next step.
+
