@@ -17,8 +17,8 @@ scripts/generate_data.py
 scripts/export_parquet.py
 pyproject.toml
 .python-version
-# --- unused data tiers (dbt uses seeds/medium_data) ---
-seeds/large_data/
+# --- unused data tiers (dbt uses seeds/large_data) ---
+seeds/medium_data/
 seeds/parquet_data/
 
 # dbt artifacts

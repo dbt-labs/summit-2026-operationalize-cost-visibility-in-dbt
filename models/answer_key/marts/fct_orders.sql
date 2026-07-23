@@ -1,15 +1,39 @@
-{{ config(materialized='table') }}
+{{ config(materialized='incremental', unique_key='order_id') }}
 
 -- Order-grain fact. One row per order, with revenue/payment measures and
 -- conformed FKs to the wizard, shop, and (via the shop) fulfilling region.
 --
--- INTENTIONALLY BAD FOR TRAINING:
--- This version always rebuilds the full table, even though orders arrive over
--- time and most historical rows are unchanged. It is useful for demonstrating
--- unnecessary rebuild cost before converting the model to incremental.
+-- OPTIMIZED ANSWER KEY:
+-- Convert the model to incremental so routine runs process only newly arrived
+-- or recently changed orders instead of rebuilding the full fact every time.
+--
+-- FINAL PHASE-2 WORKSHOP STATE:
+-- This version refines the incremental filter to capture changed historical
+-- orders when late-arriving payment/refund activity updates order-level business
+-- state. Instead of filtering only on recent ordered_at timestamps, it identifies
+-- changed order_ids from the upstream intermediate.
 
-with orders as (
-    select * from {{ ref('int_orders_with_payments') }}
+with changed_orders as (
+    {% if is_incremental() %}
+        select order_id
+        from {{ ref('int_orders_with_payments') }}
+        where greatest(ordered_at, coalesce(last_paid_at, ordered_at)) >= (
+            select coalesce(dateadd(day, -3, max(ordered_at)), '1900-01-01'::timestamp_ntz)
+            from {{ this }}
+        )
+    {% else %}
+        select cast(null as varchar) as order_id
+        where false
+    {% endif %}
+),
+
+orders as (
+    select *
+    from {{ ref('int_orders_with_payments') }}
+
+    {% if is_incremental() %}
+        where order_id in (select order_id from changed_orders)
+    {% endif %}
 ),
 
 shops as (

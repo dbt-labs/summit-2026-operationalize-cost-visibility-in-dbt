@@ -1,13 +1,13 @@
-{{ config(materialized='view') }}
+{{ config(materialized='table') }}
 
 -- Wizard (customer) dimension: one row per customer, enriched with their
 -- current guild membership (if any). Guild fields are null for the ~35% of
 -- wizards with no current membership.
 --
--- INTENTIONALLY BAD FOR TRAINING:
--- This version is materialized as a view, so every downstream query has to
--- re-run the customer/membership enrichment logic instead of reading from a
--- persisted dimensional surface.
+-- OPTIMIZED ANSWER KEY:
+-- Materialize this frequently queried dimensional surface as a table so
+-- downstream reporting and marts read from a persisted result instead of
+-- recomputing the enrichment logic on every query.
 
 with customers as (
     select * from {{ ref('stg_grimoire_crm__customers') }}

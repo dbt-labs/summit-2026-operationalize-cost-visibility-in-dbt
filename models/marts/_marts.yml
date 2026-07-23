@@ -377,3 +377,70 @@ models:
         data_type: timestamp_ntz
       - name: paid_date
         data_type: date
+  - name: fct_wizard_order_behavior
+    description: Customer behavior mart for commercial and lifecycle analysis. One row per customer.
+    config:
+      contract:
+        enforced: true
+    columns:
+      - name: customer_id
+        data_type: varchar
+        description: Primary key — wizard identifier.
+        data_tests: [unique, not_null]
+      - name: full_name
+        data_type: varchar
+        description: Wizard full name.
+      - name: home_region
+        data_type: varchar
+        description: Conformed home region.
+      - name: guild_name
+        data_type: varchar
+        description: Current guild name, if any.
+      - name: membership_tier
+        data_type: varchar
+        description: Current guild membership tier, if any.
+      - name: is_guild_member
+        data_type: boolean
+        description: Whether the wizard currently belongs to a guild.
+      - name: first_order_at
+        data_type: timestamp_ntz
+        description: Timestamp of the wizard's first order.
+      - name: latest_order_at
+        data_type: timestamp_ntz
+        description: Timestamp of the wizard's most recent order.
+      - name: days_since_last_order
+        data_type: integer
+        description: Number of days since the wizard's most recent order.
+      - name: lifetime_order_count
+        data_type: integer
+        description: Count of distinct orders placed by the wizard.
+      - name: lifetime_net_revenue_gold
+        data_type: number(38, 2)
+        description: Lifetime net revenue from the wizard in gold crowns.
+      - name: average_order_value_gold
+        data_type: number(38, 2)
+        description: Average net revenue per order for the wizard.
+      - name: total_units_purchased
+        data_type: integer
+        description: Total units purchased across all order lines.
+      - name: favorite_potion_category
+        data_type: varchar
+        description: Most frequently purchased potion category for the wizard.
+      - name: regulated_potion_line_count
+        data_type: integer
+        description: Count of regulated-potion order lines purchased by the wizard.
+      - name: refunded_order_row_count
+        data_type: integer
+        description: Intentionally bad-state metric counting refunded order rows after fanout.
+      - name: split_payment_order_row_count
+        data_type: integer
+        description: Intentionally bad-state metric counting split-payment order rows after fanout.
+      - name: marketplace_order_row_count
+        data_type: integer
+        description: Intentionally bad-state metric counting marketplace order rows after fanout.
+      - name: courier_order_row_count
+        data_type: integer
+        description: Intentionally bad-state metric counting courier order rows after fanout.
+      - name: in_store_order_row_count
+        data_type: integer
+        description: Intentionally bad-state metric counting in-store order rows after fanout.
