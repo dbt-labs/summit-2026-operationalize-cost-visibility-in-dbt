@@ -1,0 +1,38 @@
+version: 2
+
+# Seeds populate the raw landing zone (<target_schema>_raw). Every column loads
+# as text on purpose — staging does the typing/cleaning. These same tables are
+# declared as dbt SOURCES in models/staging/<system>/_<system>__sources.yml,
+# and that is where the raw-data tests (PK unique/not_null) live, so staging can
+# read them via source(). Descriptions stay here to document the raw feed.
+
+seeds:
+  # ---------------- abra_pos ----------------
+  - name: raw_potions
+    description: "Abracadabra POS potion catalog (120 rows). Source: abra_pos.raw_potions."
+  - name: raw_orders
+    description: "Abracadabra POS orders. Source: abra_pos.raw_orders."
+  - name: raw_order_items
+    description: "Abracadabra POS order line items. Source: abra_pos.raw_order_items."
+  - name: raw_payments
+    description: "Abracadabra POS payment attempts. Source: abra_pos.raw_payments."
+
+  # ---------------- grimoire_crm ----------------
+  - name: raw_customers
+    description: "Grimoire CRM wizards. Source: grimoire_crm.raw_customers."
+  - name: raw_guilds
+    description: "Grimoire CRM guilds (12 rows). Source: grimoire_crm.raw_guilds."
+  - name: raw_guild_memberships
+    description: "Grimoire CRM SCD2 membership history. Source: grimoire_crm.raw_guild_memberships."
+
+  # ---------------- alembic_ops ----------------
+  - name: raw_shops
+    description: "Alembic Ops shops (15 rows). Source: alembic_ops.raw_shops."
+  - name: raw_suppliers
+    description: "Alembic Ops suppliers (procurement lab — see docs/LAB_procurement_slice.md)."
+  - name: raw_ingredients
+    description: "Alembic Ops ingredients (procurement lab)."
+  - name: raw_potion_ingredients
+    description: "Alembic Ops recipe bridge — composite key (potion_sku, ingredient_id) (procurement lab)."
+  - name: raw_brew_events
+    description: "Alembic Ops production batches (procurement lab)."
