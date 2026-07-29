@@ -20,10 +20,63 @@ models:
               arguments:
                 values: ["Northern Reaches", "Ember Coast", "Silverwood", "The Marshlands", "Crystal Vale"]
 
-# ---------------------------------------------------------------------------
-# NOTE: suppliers, ingredients, potion_ingredients, and brew_events are the
-# `alembic_ops` procurement / supply-cost slice deliberately left UNBUILT for
-# the hands-on "plan -> design -> build with AI" lab. See
-# docs/LAB_procurement_slice.md. Their source tables are declared in
-# _alembic_ops__sources.yml and loaded by `dbt seed`.
-# ---------------------------------------------------------------------------
+  - name: stg_alembic_ops__suppliers
+    description: One row per supplier.
+    columns:
+      - name: supplier_id
+        description: Primary key — supplier identifier.
+        data_tests: [unique, not_null]
+
+  - name: stg_alembic_ops__ingredients
+    description: One row per ingredient; unit lowercased, messy is_hazardous normalized, cost in gold.
+    columns:
+      - name: ingredient_id
+        description: Primary key — ingredient identifier.
+        data_tests: [unique, not_null]
+      - name: supplier_id
+        description: FK to the supplying supplier.
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('stg_alembic_ops__suppliers')
+                field: supplier_id
+      - name: unit
+        description: Purchase unit, lowercased.
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: [gram, sprig, vial, pinch, dram, bundle]
+
+  - name: stg_alembic_ops__potion_ingredients
+    description: Recipe bridge; hashed recipe_id over the composite natural key.
+    columns:
+      - name: recipe_id
+        description: Surrogate key — hash of (potion_sku, ingredient_id).
+        data_tests: [unique, not_null]
+      - name: potion_sku
+        description: FK to the potion.
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('stg_abra_pos__potions')
+                field: potion_sku
+      - name: ingredient_id
+        description: FK to the ingredient.
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('stg_alembic_ops__ingredients')
+                field: ingredient_id
+
+  - name: stg_alembic_ops__brew_events
+    description: One row per brew batch; brewed_at parsed, quality_check lowercased.
+    columns:
+      - name: brew_id
+        description: Primary key — brew identifier.
+        data_tests: [unique, not_null]
+      - name: quality_check
+        description: Quality-check result, lowercased.
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: [pass, fail]

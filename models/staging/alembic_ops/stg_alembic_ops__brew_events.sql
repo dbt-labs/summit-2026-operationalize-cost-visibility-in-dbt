@@ -1,5 +1,3 @@
--- ANSWER KEY (disabled). Reference solution for the procurement lab; not built.
-
 with source as (
     select * from {{ source('alembic_ops', 'raw_brew_events') }}
 ),
@@ -18,7 +16,7 @@ renamed as (
 
         -- measures
         batch_size::int as batch_size,
-        brew_duration_minutes::int as brew_duration_minutes, -- ~1% null in raw
+        brew_duration_minutes::int as brew_duration_minutes,
 
         -- timestamps
         brewed_at::timestamp_ntz as brewed_at

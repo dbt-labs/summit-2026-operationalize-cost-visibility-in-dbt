@@ -2,10 +2,6 @@ version: 2
 
 # Raw Alembic Ops tables as dbt sources loaded from shared seeds in
 # apothecaries.raw. See _abra_pos__sources.yml for the seed/source note.
-#
-# All five tables are declared here, including the four procurement tables
-# whose staging models are the hands-on lab (docs/LAB_procurement_slice.md).
-# The lab builds stg models on top of these existing source declarations.
 
 sources:
   - name: alembic_ops
@@ -20,7 +16,6 @@ sources:
             description: Primary key — shop identifier (SHP-01).
             data_tests: [unique, not_null]
 
-      # ---- procurement / supply-cost slice (lab source tables) ----
       - name: raw_suppliers
         description: "Ingredient suppliers."
         columns:
@@ -48,3 +43,4 @@ sources:
           - name: brew_id
             description: Primary key — brew identifier (BRW-00001).
             data_tests: [unique, not_null]
+

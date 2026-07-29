@@ -1,117 +1,177 @@
-# 🧙‍♀️✨🌿 Merlin & Co. Apothecaries
+# Merlin & Co. Apothecaries
 
-Wizard-themed, jaffle-shop-style dbt project for the dbt Summit training
-**"Governed & Scalable AI-assisted Analytics with dbt."** Raw source data lands as
-dbt **seeds** (standing in for raw warehouse tables) and the project builds
-staging → intermediate → marts on top, on **Snowflake**, Fusion-aligned.
+Merlin & Co. Apothecaries is a Snowflake + dbt training project built for a dbt Summit workshop on **cost optimization through dbt**.
 
-The project is built out ~90% as a **governed reference project** (contracts, tests,
-a semantic layer, conventions, and CI). One complete `source → mart` vertical — the
-`alembic_ops` procurement / supply-cost slice — is deliberately left **unbuilt** as a
-hands-on "plan → design → build with AI" lab. See
-[docs/LAB_procurement_slice.md](docs/LAB_procurement_slice.md).
+The workshop uses intentional anti-patterns in a realistic retail analytics project to show how dbt can help teams do two things:
 
-**New here?** Read [CLAUDE.md](CLAUDE.md) (conventions / AI guardrails) and
-[docs/STYLE_GUIDE.md](docs/STYLE_GUIDE.md) first.
+1. make queries run faster
+2. make queries read less data
+
+The repo is designed so attendees can work through the full FinOps cycle:
+
+1. identify the symptom
+2. diagnose the root cause
+3. apply the dbt fix
+4. put a prevention mechanism in place
+
+## What this repo is for
+
+This is a hands-on training repo, not just a clean reference implementation.
+
+That means the primary `models/` directory now contains intentionally messy or suboptimal examples used in the workshop. The optimized end states live in `models/answer_key/`, alongside companion documentation that explains:
+
+- the symptom
+- the root cause
+- how the issue was identified
+- what fix was applied
+- why that fix was the right one
+- how to compare before and after
+
+## Workshop themes
+
+The training is organized around model-level and job-level optimization patterns that transfer cleanly across platforms, even though Snowflake is the warehouse used in the demos.
+
+### Model-level optimizations covered
+
+- unhealthy joins / exploding joins
+- table to incremental conversion
+- refining incremental logic for late-arriving changes
+- view to table conversion for frequently queried dimensions
+- refactoring oversized all-in-one SQL into modular dbt models
+- pruning / clustering based on observed workload patterns
+
+### Job-level optimizations planned
+
+- broad job selectors vs purpose-built selectors
+- state and deferral
+- slim CI
+- test scope optimization
+- CI cleanup support for incremental validation
+
+### Storage / environment topics discussed
+
+- transient vs permanent tables
+- clone awareness
+- write amplification and churn
+- dev / CI cleanup patterns
+
+## Repo layout
+
+```text
+models/
+├── staging/                 # stg_<system>__<entity> — source cleanup and typing
+├── intermediate/            # int_ models — joins, fanout, aggregation
+├── marts/                   # dim_ / fct_ workshop models (some intentionally bad)
+└── answer_key/              # optimized after-states + companion docs (disabled by default)
+macros/                      # shared cleaning and utility macros
+seeds/large_data/            # base training seeds loaded to APOTHECARIES.RAW
+training_assets/
+└── snowflake_scripts/       # trainer-run source-data scripts for incremental demos
+analyses/                    # dashboard-style workload queries for the clustering demo
+docs/
+├── TRAINING_NOTES.md        # full workshop planning and implementation notes
+├── demo_data.md             # trainer-facing data operations guide
+├── STYLE_GUIDE.md           # modeling + naming conventions
+├── DATA_DICTIONARY.md       # source-table notes and deliberate raw-data quirks
+├── ERD.md                   # schema diagram
+└── LAB_procurement_slice.md # legacy procurement lab brief retained in the repo
+```
+
+## Data setup
+
+The stable workshop seed baseline lives in `seeds/large_data/`.
+
+Key commerce seed sizes are roughly:
+
+- `raw_orders`: 75k rows
+- `raw_order_items`: 253k rows
+- `raw_payments`: 86k rows
+
+These are large enough to make the optimization demos believable without making the environment cumbersome to reset.
+
+For the incremental demos, trainers do **not** need attendees to reseed data. Instead, trainers apply source-data changes directly in Snowflake using:
+
+- `training_assets/snowflake_scripts/01_append_orders_batch.sql`
+- `training_assets/snowflake_scripts/02_late_payment_updates.sql`
+- `training_assets/snowflake_scripts/03_reset_demo_state.sql`
+
+See `docs/demo_data.md` for the trainer workflow.
+
+## Key workshop demo models
+
+### Existing models intentionally worsened in `models/`
+
+- `models/intermediate/int_orders_with_payments.sql`
+  - exploding join / grain mismatch
+- `models/marts/fct_orders.sql`
+  - full-table rebuild instead of incremental
+- `models/marts/dim_wizards.sql`
+  - view instead of table for a frequently queried dimension
+
+### Net-new workshop model
+
+- `models/marts/fct_wizard_order_behavior.sql`
+  - intentionally oversized all-in-one mart for the modular refactor lab
+
+### Workload-driven clustering demo
+
+- `models/marts/fct_order_items.sql`
+  - paired with dashboard-style analysis queries in `analyses/`
+
+### Optimized answer-key versions
+
+The optimized after-states live in `models/answer_key/`.
+
+Representative examples include:
+
+- `models/answer_key/intermediate/int_orders_with_payments.sql`
+- `models/answer_key/marts/fct_orders.sql`
+- `models/answer_key/marts/dim_wizards.sql`
+- `models/answer_key/marts/fct_order_items.sql`
+- `models/answer_key/marts/fct_wizard_order_behavior.sql`
+
+Each major demo also has a companion markdown note in `models/answer_key/`.
 
 ## Quickstart
 
 ```bash
-dbt deps                     # install dbt_utils
-dbt parse                    # validate the project (no warehouse needed)
-dbt seed                     # load raw CSVs into APOTHECARIES.RAW (run once)
-dbt build                    # run + test all models against your Snowflake connection
+dbt deps
+dbt parse
+dbt seed
+dbt build
 ```
 
-Staging reads the raw tables via `source()` (declared in
-`models/staging/<system>/_<system>__sources.yml`); the seeds populate those source
-tables. dbt doesn't link a seed to its source, so **`dbt seed` before `dbt build`** —
-the data is static, so it's a one-time step.
+Notes:
 
-Local dev needs a `~/.dbt/profiles.yml` (copy [profiles.example.yml](profiles.example.yml));
-once the repo is linked to the dbt platform, the connection is managed there instead.
+- `dbt seed` loads the raw CSVs into `APOTHECARIES.RAW`
+- staging models read those tables via `source()` declarations
+- the answer-key folder is disabled in normal project runs
 
-**The business:** Merlin & Co. Apothecaries is a 15-shop potion retail chain spanning five regions. Wizards (customers) buy potions in store, by courier owl, or via a marketplace. Shops brew their own stock from ingredients sourced from regional suppliers, and many customers belong to arcane guilds with tiered memberships.
+Local development uses `~/.dbt/profiles.yml` (see `profiles.example.yml`). In dbt platform environments, the connection is managed there instead.
 
-## Repo layout
+## Trainer notes
 
-```
-models/
-├── staging/          # stg_<system>__<entity> — clean + type, reads one source()
-│   └── <system>/     #   + _<system>__sources.yml (raw tables declared as dbt sources)
-├── intermediate/     # int_ models — joins, fan-out, aggregation
-└── marts/            # dim_ / fct_ + enforced contracts, tests, and the semantic layer
-macros/               # shared cleaning macros (to_boolean, copper_to_gold, conform_region, …)
-seeds/medium_data/    # the 12 raw CSVs (3 source systems); `dbt seed` loads them to APOTHECARIES.RAW
-ci/                   # dummy profile for warehouse-free CI (parse + lint)
-docs/
-├── ERD.md                     # full schema diagram (columns, types, PK/FK markers)
-├── DATA_DICTIONARY.md         # per-table column notes and deliberate data quirks
-├── STYLE_GUIDE.md             # modeling + naming conventions
-└── LAB_procurement_slice.md   # brief for the hands-on build-with-AI lab
-```
+If you are presenting or inheriting the workshop, start here:
 
-The `medium_data` tier (~15k orders / ~51k order items / 5k customers) is the lab default
-and the only tier `seed-paths` points at.
+- `docs/TRAINING_NOTES.md`
+- `docs/demo_data.md`
+
+Those docs explain:
+
+- what each module is demonstrating
+- which model corresponds to which optimization
+- how trainer-run data changes support the incremental demos
+- how the before/after assets are organized
 
 ## Source systems
 
-The 12 tables come from three fictional source systems:
+The raw data comes from three fictional source systems:
 
-| Folder | System | Tables |
-|---|---|---|
-| `seeds/medium_data/abra_pos/` | **Abracadabra POS** (point-of-sale) | `raw_potions`, `raw_orders`, `raw_order_items`, `raw_payments` |
-| `seeds/medium_data/grimoire_crm/` | **Grimoire CRM** | `raw_customers`, `raw_guilds`, `raw_guild_memberships` |
-| `seeds/medium_data/alembic_ops/` | **Alembic Ops** (production & procurement) | `raw_shops`, `raw_suppliers`, `raw_ingredients`, `raw_potion_ingredients`, `raw_brew_events` |
+| System | Example tables |
+|---|---|
+| Abracadabra POS | `raw_orders`, `raw_order_items`, `raw_payments`, `raw_potions` |
+| Grimoire CRM | `raw_customers`, `raw_guilds`, `raw_guild_memberships` |
+| Alembic Ops | `raw_shops`, `raw_suppliers`, `raw_ingredients`, `raw_potion_ingredients`, `raw_brew_events` |
 
-## ERD
+See `docs/DATA_DICTIONARY.md` and `docs/ERD.md` for full details.
 
-See **[docs/ERD.md](docs/ERD.md)** for the full schema diagram. Quick relationship overview:
-
-```mermaid
-erDiagram
-    raw_customers ||--o{ raw_orders : places
-    raw_customers ||--o{ raw_guild_memberships : holds
-    raw_guilds ||--o{ raw_guild_memberships : grants
-    raw_shops ||--o{ raw_orders : fulfills
-    raw_orders ||--|{ raw_order_items : contains
-    raw_orders ||--o{ raw_payments : "paid by"
-    raw_potions ||--o{ raw_order_items : "sold as"
-    raw_potions ||--o{ raw_potion_ingredients : "made from"
-    raw_potions ||--o{ raw_brew_events : "brewed in"
-    raw_shops ||--o{ raw_brew_events : hosts
-    raw_ingredients ||--o{ raw_potion_ingredients : "used in"
-    raw_suppliers ||--o{ raw_ingredients : supplies
-```
-
-## Downstream models (Kimball)
-
-Built out today (hero path) vs. left for the hands-on procurement lab:
-
-| Layer | Built | Lab (unbuilt) |
-|---|---|---|
-| staging | `stg_` for potions, orders, order_items, payments, customers, guilds, guild_memberships, shops | suppliers, ingredients, potion_ingredients, brew_events |
-| intermediate | `int_orders_with_payments`, `int_memberships_current` | `int_potion_supply_cost` |
-| dims | `dim_wizards`, `dim_potions`, `dim_shops`, `dim_dates` | `dim_suppliers` |
-| facts | `fct_orders`, `fct_order_items`, `fct_payments` | `fct_brews` |
-
-Staging normalizes the deliberate raw quirks via shared macros (`to_boolean`,
-`copper_to_gold`, `conform_region` in [macros/](macros/)) plus direct casts and
-lightweight cleanup in the staging models. Marts carry enforced contracts + tests,
-and a semantic layer defines the governed metrics.
-
-## Built-in storylines
-
-- **Growth**: order volume roughly doubles across the two-year window (2024-07 → 2026-06)
-- **Seasonality**: Healing spikes in winter, Love potions ~2× share in February, Luck around the new year
-- **Regional spread**: wizard populations differ by region (~1.8× revenue spread top to bottom)
-- **Whales**: customer order counts follow a power-law — a few archmages drive outsized revenue
-- **Home-region loyalty**: 80% of orders happen in the customer's home region
-
-## Where the data comes from
-
-The 12 raw CSVs in `seeds/medium_data/` are committed and ready to `dbt seed` — no
-generation step is needed to use this repo. They were produced by a deterministic,
-stdlib-only generator (seeded RNG, so output is byte-identical on every run) that lives
-outside this training repo. See **[docs/DATA_DICTIONARY.md](docs/DATA_DICTIONARY.md)** for
-column-level details and the deliberate data quirks staging is built to clean up.

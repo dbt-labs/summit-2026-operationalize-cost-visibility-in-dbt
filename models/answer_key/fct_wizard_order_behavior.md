@@ -13,8 +13,9 @@ The bad-state version mixes multiple concerns in a single mart:
 - payment behavior
 - item-level potion preferences
 - category ranking logic
+- cost and margin proxy logic
 
-It also handles multiple grains inline, repeats work across CTEs, and builds the final customer-grain output by dragging lower-grain order, line, and payment data through one oversized query.
+It also handles multiple grains inline, repeats work across CTEs, and builds the final customer-grain output by dragging lower-grain order, line, payment, and potion-cost data through one oversized query.
 
 ## How the issue was identified
 
@@ -38,7 +39,7 @@ The optimized version splits the logic into two customer-grain intermediate mode
 This model is fundamentally a customer-grain behavior mart. The cleanest implementation is to:
 
 - roll up order/payment behavior once
-- roll up potion preferences once
+- roll up potion preferences and cost proxies once
 - join those customer-grain results together in the final mart
 
 That makes the grain explicit and keeps each model focused on one responsibility.
@@ -47,15 +48,15 @@ That makes the grain explicit and keeps each model focused on one responsibility
 
 Before:
 
-- one giant mart joined dimensions, order facts, line facts, payment facts, and potion attributes together
-- category ranking and behavioral rollups were computed inline
+- one giant mart joined dimensions, order facts, line facts, payment facts, potion attributes, and potion-cost proxies together
+- category ranking, behavioral rollups, and estimated cost/margin logic were computed inline
 - lower-grain data was carried through most of the query plan
 
 After:
 
 - `int_wizard_order_behavior_base` handles customer-grain order and channel behavior
-- `int_wizard_potion_preferences` handles customer-grain item/category preference logic
-- the final mart assembles those two rollups into one presentation-ready customer behavior output
+- `int_wizard_potion_preferences` handles customer-grain item/category preference logic plus estimated cost rollups
+- the final mart assembles those two rollups into one presentation-ready customer behavior output and computes the final margin proxy
 
 ## Expected benefit
 

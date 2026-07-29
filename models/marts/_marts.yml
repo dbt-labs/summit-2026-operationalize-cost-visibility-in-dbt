@@ -429,6 +429,16 @@ models:
       - name: regulated_potion_line_count
         data_type: integer
         description: Count of regulated-potion order lines purchased by the wizard.
+      - name: estimated_total_supply_cost_gold
+        data_type: number(38, 2)
+        description: Intentionally bad-state estimated total supply cost rolled up inline from potion cost proxies.
+      - name: estimated_gross_margin_gold
+        data_type: number(38, 2)
+        description: Intentionally bad-state estimated gross margin proxy computed inline.
+      - name: high_cost_potion_line_count
+        data_type: integer
+        description: Count of higher-cost potion lines purchased by the wizard.
+
       - name: refunded_order_row_count
         data_type: integer
         description: Intentionally bad-state metric counting refunded order rows after fanout.
@@ -444,3 +454,94 @@ models:
       - name: in_store_order_row_count
         data_type: integer
         description: Intentionally bad-state metric counting in-store order rows after fanout.
+  - name: dim_suppliers
+    description: Supplier dimension with supplied-ingredient count.
+    config:
+      contract:
+        enforced: true
+    columns:
+      - name: supplier_id
+        data_type: varchar
+        description: Primary key — supplier identifier.
+        data_tests: [unique, not_null]
+      - name: supplier_name
+        data_type: varchar
+        description: Supplier display name.
+      - name: region
+        data_type: varchar
+        description: Supplier region.
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ["Northern Reaches", "Ember Coast", "Silverwood", "The Marshlands", "Crystal Vale"]
+      - name: reliability_rating
+        data_type: integer
+        description: Supplier reliability rating from 1 to 5.
+      - name: supplied_ingredient_count
+        data_type: integer
+        description: Count of ingredients supplied by the supplier.
+      - name: contracted_since
+        data_type: date
+        description: Date the supplier contract started.
+
+  - name: fct_brews
+    description: Brew-batch-grain fact with estimated batch supply cost.
+    config:
+      contract:
+        enforced: true
+    columns:
+      - name: brew_id
+        data_type: varchar
+        description: Primary key — brew identifier.
+        data_tests: [unique, not_null]
+      - name: potion_sku
+        data_type: varchar
+        description: FK to dim_potions.
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_potions')
+                field: potion_sku
+      - name: shop_id
+        data_type: varchar
+        description: FK to dim_shops.
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_shops')
+                field: shop_id
+      - name: brew_region
+        data_type: varchar
+        description: Region of the brewing shop.
+      - name: cauldron_id
+        data_type: varchar
+        description: Brewing cauldron identifier.
+      - name: quality_check
+        data_type: varchar
+        description: Quality-check result.
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: [pass, fail]
+      - name: passed_quality_check
+        data_type: boolean
+        description: Whether the batch passed quality check.
+      - name: brewer_name
+        data_type: varchar
+        description: Brewer responsible for the batch.
+      - name: batch_size
+        data_type: integer
+        description: Number of potion units brewed in the batch.
+      - name: brew_duration_minutes
+        data_type: integer
+        description: Duration of the brew in minutes.
+      - name: batch_supply_cost_gold
+        data_type: number(38, 2)
+        description: Estimated batch supply cost in gold crowns.
+      - name: brewed_at
+        data_type: timestamp_ntz
+        description: Brew timestamp.
+      - name: brewed_date
+        data_type: date
+        description: Brew date.
+

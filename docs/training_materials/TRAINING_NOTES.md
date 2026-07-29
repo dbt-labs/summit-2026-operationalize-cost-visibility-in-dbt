@@ -1587,7 +1587,9 @@ Expected contents:
 - total units purchased
 - favorite potion category
 - regulated-potion behavior flags or counts
-- other item-level preference features as needed
+- estimated total supply cost rolled up from `int_potion_supply_cost`
+- high-cost potion line counts or similar light cost-aware preference features
+
 
 #### 3. `models/answer_key/marts/fct_wizard_order_behavior.sql`
 
