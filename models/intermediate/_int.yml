@@ -27,3 +27,10 @@ models:
           - accepted_values:
               arguments:
                 values: [apprentice, adept, archmage]
+
+  - name: int_potion_supply_cost
+    description: Cost to brew one unit of each potion (see model header for the unit assumption).
+    columns:
+      - name: potion_sku
+        description: Primary key — one row per potion with a recipe.
+        data_tests: [unique, not_null]

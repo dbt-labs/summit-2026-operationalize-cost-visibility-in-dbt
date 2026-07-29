@@ -61,7 +61,3 @@ seeds:
     # dual timestamp formats, messy booleans) survive intact — staging does
     # the cleaning. This mirrors how a real raw landing zone behaves.
     +quote_columns: false
-
-
-on-run-end:
-  - "{{ transfer_object_ownership(target_role=env_var('DBT_OWNERSHIP_TARGET_ROLE')) }}"

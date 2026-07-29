@@ -148,10 +148,12 @@ Depends on:
 Depends on:
 
 - base large dataset
+- `int_potion_supply_cost` as the estimated cost-proxy input for the enriched lab version
 
 Note:
 
-- this lab is primarily about model architecture and refactoring, so the large dataset just makes the cost/performance story more believable.
+- this lab is primarily about model architecture and refactoring, and the light cost enrichment gives the exercise a more believable commercial lens without changing it into a separate procurement demo.
+
 
 ## Safety notes
 

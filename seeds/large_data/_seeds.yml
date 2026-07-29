@@ -29,10 +29,11 @@ seeds:
   - name: raw_shops
     description: "Alembic Ops shops (15 rows). Source: alembic_ops.raw_shops."
   - name: raw_suppliers
-    description: "Alembic Ops suppliers (procurement lab — see docs/LAB_procurement_slice.md)."
+    description: "Alembic Ops suppliers. Source: alembic_ops.raw_suppliers."
   - name: raw_ingredients
-    description: "Alembic Ops ingredients (procurement lab)."
+    description: "Alembic Ops ingredients. Source: alembic_ops.raw_ingredients."
   - name: raw_potion_ingredients
-    description: "Alembic Ops recipe bridge — composite key (potion_sku, ingredient_id) (procurement lab)."
+    description: "Alembic Ops recipe bridge — composite key (potion_sku, ingredient_id). Source: alembic_ops.raw_potion_ingredients."
   - name: raw_brew_events
-    description: "Alembic Ops production batches (procurement lab)."
+    description: "Alembic Ops production batches. Source: alembic_ops.raw_brew_events."
+

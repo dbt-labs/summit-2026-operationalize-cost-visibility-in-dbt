@@ -1,5 +1,3 @@
--- ANSWER KEY (disabled). Reference solution for the procurement lab; not built.
-
 with suppliers as (
     select * from {{ ref('stg_alembic_ops__suppliers') }}
 ),

@@ -1,5 +1,3 @@
--- ANSWER KEY (disabled). Reference solution for the procurement lab; not built.
---
 -- Brew-batch-grain fact. One row per production batch. Joins the shop region
 -- and an estimated batch supply cost (per-unit brew cost * batch size).
 

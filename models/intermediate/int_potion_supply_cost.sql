@@ -1,14 +1,9 @@
--- ANSWER KEY (disabled). Reference solution for the procurement lab; not built.
---
 -- Cost to brew one unit of each potion, rolled up from its recipe.
 --
--- DESIGN DECISION (the lab talking point): recipe quantities and ingredient
--- unit costs are expressed in mixed units (gram / vial / pinch / …). A fully
--- correct model would convert to a common unit before costing. Here we make
--- the simplifying assumption that raw `quantity` multiplies raw `unit_cost`
--- directly (i.e. one recipe "unit" == one purchased "unit"), and we document
--- it rather than hide it. Swapping in a real unit-conversion table is a natural
--- extension exercise.
+-- DESIGN DECISION: recipe quantities and ingredient unit costs are expressed in
+-- mixed units (gram / vial / pinch / …). A fully correct model would convert to
+-- a common unit before costing. Here we make the simplifying assumption that
+-- raw `quantity` multiplies raw `unit_cost` directly and document it explicitly.
 
 with recipe as (
     select * from {{ ref('stg_alembic_ops__potion_ingredients') }}

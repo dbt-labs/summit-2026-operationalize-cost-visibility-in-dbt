@@ -1,5 +1,3 @@
--- ANSWER KEY (disabled). Reference solution for the procurement lab; not built.
-
 with source as (
     select * from {{ source('alembic_ops', 'raw_ingredients') }}
 ),
