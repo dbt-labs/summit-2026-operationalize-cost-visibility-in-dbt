@@ -12,7 +12,7 @@ profile: "merlinco_apothecaries"
 # ---------------------------------------------------------------------------
 model-paths: ["models"]
 macro-paths: ["macros"]
-seed-paths: ["seeds/medium_data"] # one tier only — filenames collide across tiers
+seed-paths: ["seeds/large_data"] # one tier only — filenames collide across tiers
 test-paths: ["tests"]
 snapshot-paths: ["snapshots"]
 analysis-paths: ["analyses"]

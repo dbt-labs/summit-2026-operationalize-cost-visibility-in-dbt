@@ -69,12 +69,17 @@ training_assets/
 └── snowflake_scripts/       # trainer-run source-data scripts for incremental demos
 analyses/                    # dashboard-style workload queries for the clustering demo
 docs/
-├── TRAINING_NOTES.md        # full workshop planning and implementation notes
-├── demo_data.md             # trainer-facing data operations guide
-├── STYLE_GUIDE.md           # modeling + naming conventions
-├── DATA_DICTIONARY.md       # source-table notes and deliberate raw-data quirks
-├── ERD.md                   # schema diagram
-└── LAB_procurement_slice.md # legacy procurement lab brief retained in the repo
+├── merlinco/
+    ├── STYLE_GUIDE.md           # modeling + naming conventions
+    ├── DATA_DICTIONARY.md       # source-table notes and deliberate raw-data quirks
+    ├── ERD.md                   # schema diagram
+└── LAB_procurement_slice.md     # legacy procurement lab brief retained in the repo
+├── training_materials/
+    ├── TRAINING_NOTES.md                         # full workshop planning and implementation notes
+    ├── full_demo_operations_guide.md             # trainer-facing data operations guide
+    ├── jobs.md                                   # trainer-facing jobs config outline and demo walkthrough
+    ├── PRESENTATION_OUTLINE.md                   # trainer-facing rough presentation outline
+
 ```
 
 ## Data setup
