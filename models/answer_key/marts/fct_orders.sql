@@ -1,4 +1,4 @@
-{{ config(materialized='incremental', unique_key='order_id') }}
+{{ config(materialized='incremental', unique_key='order_id', on_schema_change='fail') }}
 
 -- Order-grain fact. One row per order, with revenue/payment measures and
 -- conformed FKs to the wizard, shop, and (via the shop) fulfilling region.

@@ -56,7 +56,7 @@ models:
 seeds:
   merlinco_apothecaries:
     +database: apothecaries
-    +schema: raw
+    +schema: costs_raw
     # Load every raw column as text so the deliberate quirks (mixed case,
     # dual timestamp formats, messy booleans) survive intact — staging does
     # the cleaning. This mirrors how a real raw landing zone behaves.
