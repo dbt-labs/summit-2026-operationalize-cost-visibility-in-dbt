@@ -24,23 +24,17 @@ These should get the most airtime.
 - **Answer key:** `models/answer_key/intermediate/int_orders_with_payments.sql`
 - **Companion doc:** `models/answer_key/int_orders_with_payments.md`
 
-#### 2. Full table rebuild instead of incremental
+#### 2. Daily full-table rebuild instead of merge incremental
 
-- **Symptom:** long-running builds, unnecessary compute on unchanged history
+- **Symptom:** a large fact rebuilds and rewrites full history daily even though only a small weekly source batch changed
 - **Model:** `models/marts/fct_orders.sql`
 - **Answer key:** `models/answer_key/marts/fct_orders.sql`
 - **Companion doc:** `models/answer_key/fct_orders.md`
+- **After-state design:** merge incremental on `order_id`, using order-level `source_updated_at` to select exact changed keys
+- **Weekly source batch:** `training_assets/snowflake_scripts/04_weekly_orders_change_batch.sql`
+  - 18 raw source changes
+  - 8 changed parent orders: 4 new and 4 historical updates
 
-#### 3. Incremental logic refinement for late-arriving changes
-
-- **Symptom:** naive incremental logic misses changed historical business state or causes unnecessary churn
-- **Model:** `models/marts/fct_orders.sql`
-- **Answer key:** `models/answer_key/marts/fct_orders.sql`
-- **Companion doc:** `models/answer_key/fct_orders.md`
-- **Trainer data scripts:**
-  - `training_assets/snowflake_scripts/01_append_orders_batch.sql`
-  - `training_assets/snowflake_scripts/02_late_payment_updates.sql`
-  - `training_assets/snowflake_scripts/03_reset_demo_state.sql`
 
 #### 4. View instead of table for a frequently queried dimension
 
@@ -107,27 +101,23 @@ Primary planning docs:
 
 Start with `int_orders_with_payments` because it is an easy symptom-to-fix story and teaches both correctness and performance.
 
-### 2. Incremental materialization
+### 2. Merge incremental materialization
 
-Move to `fct_orders` full table rebuild vs incremental.
+Move to `fct_orders`: replace the daily full-table rebuild with a merge incremental keyed on `order_id`. Use `source_updated_at` to select the exact changed order keys after the weekly source batch.
 
-### 3. Incremental refinement
-
-Stay on `fct_orders` and introduce late-arriving payment/refund changes.
-
-### 4. Materialization strategy for dimensions
+### 3. Materialization strategy for dimensions
 
 Use `dim_wizards` for the clean view-to-table story.
 
-### 5. Modular refactor lab
+### 4. Modular refactor lab
 
 Use `fct_wizard_order_behavior` for the architecture/design section.
 
-### 6. Clustering / pruning
+### 5. Clustering / pruning
 
 Use `fct_order_items` plus the five workload analyses.
 
-### 7. Jobs and test scope
+### 6. Jobs and test scope
 
 Close with CI/deploy/state/deferral/test selection.
 
@@ -136,8 +126,7 @@ Close with CI/deploy/state/deferral/test selection.
 | Optimization | Primary model / asset |
 |---|---|
 | Exploding join | `int_orders_with_payments` |
-| Table → incremental | `fct_orders` |
-| Incremental phase 2 / churn | `fct_orders` + trainer DML scripts |
+| Table → merge incremental | `fct_orders` |
 | View → table | `dim_wizards` |
 | Modular refactor | `fct_wizard_order_behavior` |
 | Clustering / pruning | `fct_order_items` + `analyses/order_items_perf__*.sql` |
@@ -147,11 +136,10 @@ Close with CI/deploy/state/deferral/test selection.
 ## Presenter shortcut
 
 If you need the fastest possible deck-planning summary:
+1. `int_orders_with_payments` → expensive fanout joins
+2. `fct_orders` → daily full rebuild to merge incremental with exact changed keys
+3. `dim_wizards` → persist a reused dim
+4. `fct_wizard_order_behavior` → split a monster model into 2 ints + 1 mart
+5. `fct_order_items` + analysis workload → cluster for pruning
+6. jobs/selectors/tests/state/deferral → operational cost optimization
 
-1. `int_orders_with_payments` → bad joins
-2. `fct_orders` → incremental
-3. `fct_orders` again → better incremental logic for late-arriving changes
-4. `dim_wizards` → persist a reused dim
-5. `fct_wizard_order_behavior` → split a monster model into 2 ints + 1 mart
-6. `fct_order_items` + analysis workload → cluster for pruning
-7. jobs/selectors/tests/state/deferral → operational cost optimization

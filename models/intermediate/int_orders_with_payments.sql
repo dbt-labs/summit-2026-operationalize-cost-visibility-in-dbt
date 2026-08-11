@@ -31,15 +31,18 @@ joined as (
         orders.channel,
         orders.discount_gold,
         orders.ordered_at,
+        orders.ingested_at as order_ingested_at,
         order_items.order_item_id,
         order_items.quantity,
         order_items.line_revenue_copper,
         order_items.line_revenue_gold,
+        order_items.ingested_at as order_item_ingested_at,
         payments.payment_id,
         payments.payment_method,
         payments.payment_status,
         payments.amount_gold,
-        payments.paid_at
+        payments.paid_at,
+        payments.ingested_at as payment_ingested_at
     from orders
     left join order_items on orders.order_id = order_items.order_id
     left join payments on orders.order_id = payments.order_id
@@ -71,7 +74,12 @@ final as (
 
         -- timestamps
         ordered_at,
-        max(paid_at) as last_paid_at
+        max(paid_at) as last_paid_at,
+        greatest(
+            max(order_ingested_at),
+            max(order_item_ingested_at),
+            max(payment_ingested_at)
+        ) as source_updated_at
     from joined
     group by
         order_id,

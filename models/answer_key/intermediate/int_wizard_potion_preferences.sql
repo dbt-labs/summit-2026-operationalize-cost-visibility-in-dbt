@@ -1,7 +1,7 @@
 -- Customer-grain potion preference rollup based on order lines, potion attributes, and cost proxies.
 
 with order_items as (
-    select * from {{ ref('fct_order_items') }}
+    select * from {{ ref('fct_order_items__optimized') }}
 ),
 
 potions as (

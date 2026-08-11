@@ -1776,43 +1776,29 @@ This more closely matches the real workflow we want to teach:
 2. downstream dbt models rebuild in user schemas
 3. incremental logic determines what gets processed
 
-#### 3. Store trainer-run Snowflake scripts in `training_assets/snowflake_scripts/`
+#### 3. Store the weekly source-ingestion script in `training_assets/snowflake_scripts/`
 
-Recommended training asset location:
+Active training asset:
 
-- `training_assets/snowflake_scripts/`
+- `04_weekly_orders_change_batch.sql`
 
-Required scripts:
+The trainer runs this script weekly before the daily `fct_orders` build. It applies 18 raw-source changes with one shared `batch_ingested_at` value:
 
-- `01_append_orders_batch.sql`
-- `02_late_payment_updates.sql`
-- `03_reset_demo_state.sql`
+- 4 new orders, 7 new line items, and 3 new payments
+- 2 late refund events and 2 corrections to historical orders
+- 8 affected parent `order_id`s: 4 new and 4 historical
 
-Purpose of each script:
+The answer-key `fct_orders` merge incremental uses the resulting order-grain `source_updated_at` to insert the new orders and update the changed historical orders. The script dynamically allocates new IDs and is intentionally append-oriented for the workshop; duplicate execution is not retry-idempotent.
 
-- `01_append_orders_batch.sql`
-  - inserts brand-new orders, matching order items, and matching payments
-  - supports the clean append-only incremental demo
-- `02_late_payment_updates.sql`
-  - inserts late-arriving payment/refund-related records tied to existing order IDs
-  - supports the lesson that naive incremental logic may miss changed historical business state or cause excessive churn
-- `03_reset_demo_state.sql`
-  - removes trainer-added demo rows and restores the shared raw source tables to the expected baseline before the next session
-
-Preferred design principle:
-
-- for late updates, prefer inserting new source events tied to existing orders over mutating old raw records in place
-- this is more realistic for event-style ingestion and makes the downstream incremental lesson cleaner
-
-#### 4. Bias the base data and DML events toward the planned demos
+#### 4. Bias the base data and weekly batch toward the planned demos
 
 The training data should not just be larger; it should make the workshop easier to teach.
 
-For `fct_orders` incremental and churn:
+For `fct_orders` incremental:
 
-- the base dataset should already contain realistic append-style order history
-- `01_append_orders_batch.sql` should add clearly new orders and their downstream line/payment records
-- `02_late_payment_updates.sql` should add a small but meaningful number of late-arriving events affecting existing order IDs
+- the base dataset should contain large order history
+- `04_weekly_orders_change_batch.sql` should make a small, explicit set of changed order IDs available before the daily build
+- the demo should compare full-history rebuild cost to an 8-key merge incremental
 
 For `fct_order_items` pruning/clustering:
 
@@ -1827,43 +1813,27 @@ For `int_orders_with_payments` join health:
 
 The data-foundation phase should produce at least the following artifacts:
 
-#### Active base seed set
+#### Active base source set
 
-- `seeds/large_data/abra_pos/raw_orders.csv`
-- `seeds/large_data/abra_pos/raw_order_items.csv`
-- `seeds/large_data/abra_pos/raw_payments.csv`
+- trainer-managed Snowflake raw tables, including `raw_orders`, `raw_order_items`, and `raw_payments` with `ingested_at`
 
-#### Trainer-run Snowflake scripts
+#### Trainer-run Snowflake script
 
-- `training_assets/snowflake_scripts/01_append_orders_batch.sql`
-- `training_assets/snowflake_scripts/02_late_payment_updates.sql`
-- `training_assets/snowflake_scripts/03_reset_demo_state.sql`
+- `training_assets/snowflake_scripts/04_weekly_orders_change_batch.sql`
 
 #### Documentation
 
-Need a short trainer-facing data-setup note that explains:
-
-- what the large base dataset contains
-- when to run each Snowflake script
-- what each script changes in the raw source data
-- how to reset the shared source tables back to baseline
-- which demos depend on which scripts
-
-Recommended location:
-
-- `docs/demo_data.md`
+- `docs/training_materials/full_demo_operations_guide.md`, covering batch cadence, expected impact, and rehearsal guidance
 
 ### Recommended next implementation tasks for data foundation
 
-1. confirm `seeds/large_data/` as the stable workshop seed baseline
-2. create `training_assets/snowflake_scripts/01_append_orders_batch.sql`
-3. create `training_assets/snowflake_scripts/02_late_payment_updates.sql`
-4. create `training_assets/snowflake_scripts/03_reset_demo_state.sql`
-5. document the trainer reset/apply flow in `docs/demo_data.md`
+1. document final baseline row counts once the trainer-managed source state is locked
+2. schedule the weekly source-ingestion task and daily `fct_orders` build
+3. add trainer-specific runbook notes discovered during rehearsal
 
 ### Reminder: data foundation unlocks the rest of the build
 
-Once the large base seed history and trainer-run Snowflake scripts are in place, we can build the highest-priority demo models with confidence:
+Once the large source history and weekly batch are in place, we can build the highest-priority demo models with confidence:
 
 - `fct_orders`
 - `int_orders_with_payments`

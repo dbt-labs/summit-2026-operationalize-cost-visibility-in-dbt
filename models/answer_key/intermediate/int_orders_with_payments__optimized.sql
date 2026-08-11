@@ -4,7 +4,6 @@
 -- Aggregate each lower-grain input to order grain first, then join the rollups
 -- back to orders. This avoids the order_items x payments fanout and keeps the
 -- query shape aligned to the final grain.
-
 {{
     config(
         materialized='table'
@@ -29,7 +28,8 @@ item_totals as (
         count(*) as line_item_count,
         sum(quantity) as total_quantity,
         sum(line_revenue_copper) as gross_revenue_copper,
-        sum(line_revenue_gold) as gross_revenue_gold
+        sum(line_revenue_gold) as gross_revenue_gold,
+        max(ingested_at) as item_source_updated_at
     from order_items
     group by order_id
 ),
@@ -42,7 +42,8 @@ payment_rollup as (
         sum(case when payment_status = 'success' then 1 else 0 end) as successful_payment_count,
         max(case when payment_status = 'failed' then 1 else 0 end) = 1 as had_failed_attempt,
         max(case when payment_status = 'refunded' then 1 else 0 end) = 1 as is_refunded,
-        max(paid_at) as last_paid_at
+        max(paid_at) as last_paid_at,
+        max(ingested_at) as payment_source_updated_at
     from payments
     group by order_id
 ),
@@ -73,7 +74,12 @@ final as (
 
         -- timestamps
         orders.ordered_at,
-        payment_rollup.last_paid_at
+        payment_rollup.last_paid_at,
+        greatest(
+            orders.ingested_at,
+            item_totals.item_source_updated_at,
+            payment_rollup.payment_source_updated_at
+        ) as source_updated_at
     from orders
     left join item_totals on orders.order_id = item_totals.order_id
     left join payment_rollup on orders.order_id = payment_rollup.order_id

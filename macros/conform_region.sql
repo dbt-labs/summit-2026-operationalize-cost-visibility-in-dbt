@@ -15,6 +15,7 @@
         when 'northern reaches' then 'Northern Reaches'
         when 'ec' then 'Ember Coast'
         when 'ember coast' then 'Ember Coast'
+        when 'ember_coast' then 'Ember Coast'
         when 'sw' then 'Silverwood'
         when 'silverwood' then 'Silverwood'
         when 'ml' then 'The Marshlands'

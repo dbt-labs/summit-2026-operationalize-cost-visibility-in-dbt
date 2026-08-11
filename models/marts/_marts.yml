@@ -73,6 +73,7 @@ models:
   - name: dim_wizards
     description: Wizard (customer) dimension with current guild membership.
     config:
+      tags: [unoptimized]
       contract:
         enforced: true
     columns:
@@ -155,6 +156,7 @@ models:
   - name: fct_orders
     description: Order-grain fact with revenue, payment behavior, and conformed FKs. Order-grain semantic model over fct_orders.
     config:
+      tags: [unoptimized]
       contract:
         enforced: true
     columns:
@@ -232,10 +234,14 @@ models:
         data_tests: [not_null]
       - name: ordered_date
         data_type: date
-
         dimension:
           type: time
         granularity: day
+      - name: source_updated_at
+        data_type: timestamp_ntz
+        description: Latest raw-record ingestion timestamp across the order, its line items, and its payment attempts; used as the fct_orders incremental high-watermark.
+        data_tests: [not_null]
+
     semantic_model:
       enabled: true
       name: fct_orders
@@ -266,9 +272,11 @@ models:
   - name: fct_order_items
     description: Line-grain fact — one row per potion per order. Line-grain semantic model over fct_order_items.
     config:
+      tags: [unoptimized]
       contract:
         enforced: true
     columns:
+
       - name: order_item_id
         data_type: varchar
         description: Primary key — line item identifier.

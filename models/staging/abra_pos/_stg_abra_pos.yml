@@ -86,6 +86,11 @@ models:
         description: quantity * unit_price, in gold crowns.
         data_tests: [not_null]
 
+      - name: ingested_at
+        description: Operational warehouse-arrival timestamp used as the incremental change-detection watermark.
+        data_tests: [not_null]
+
+
   - name: stg_abra_pos__payments
     description: One row per payment attempt. Orders may split across payments or have a failed attempt.
     columns:
@@ -112,3 +117,7 @@ models:
           - accepted_values:
               arguments:
                 values: [success, failed, refunded]
+
+      - name: ingested_at
+        description: Operational warehouse-arrival timestamp used as the incremental change-detection watermark.
+        data_tests: [not_null]

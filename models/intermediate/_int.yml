@@ -13,6 +13,11 @@ models:
         description: Gross line revenue minus order-level discount, in gold.
         data_tests: [not_null]
 
+      - name: source_updated_at
+        description: Latest raw-record ingestion timestamp across the order, its line items, and its payment attempts; used by fct_orders to identify changed order IDs for incremental processing.
+        data_tests: [not_null]
+
+
   - name: int_memberships_current
     description: >
       Current guild membership per customer (SCD2 collapsed to the open row),

@@ -43,7 +43,8 @@ final as (
 
         -- timestamps
         orders.ordered_at::timestamp_ntz as ordered_at,
-        orders.ordered_at::date as ordered_date
+        orders.ordered_at::date as ordered_date,
+        orders.source_updated_at::timestamp_ntz as source_updated_at
     from orders
     left join shops on orders.shop_id = shops.shop_id
 )
