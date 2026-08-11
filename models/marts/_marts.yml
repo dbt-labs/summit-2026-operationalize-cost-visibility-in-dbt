@@ -232,10 +232,14 @@ models:
         data_tests: [not_null]
       - name: ordered_date
         data_type: date
-
         dimension:
           type: time
         granularity: day
+      - name: source_updated_at
+        data_type: timestamp_ntz
+        description: Latest raw-record ingestion timestamp across the order, its line items, and its payment attempts; used as the fct_orders incremental high-watermark.
+        data_tests: [not_null]
+
     semantic_model:
       enabled: true
       name: fct_orders

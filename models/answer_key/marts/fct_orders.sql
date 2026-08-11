@@ -1,39 +1,34 @@
-{{ config(materialized='incremental', unique_key='order_id', on_schema_change='fail') }}
+{{ config(materialized='incremental', incremental_strategy='merge', unique_key='order_id', on_schema_change='fail') }}
 
 -- Order-grain fact. One row per order, with revenue/payment measures and
 -- conformed FKs to the wizard, shop, and (via the shop) fulfilling region.
 --
 -- OPTIMIZED ANSWER KEY:
--- Convert the model to incremental so routine runs process only newly arrived
--- or recently changed orders instead of rebuilding the full fact every time.
---
--- FINAL PHASE-2 WORKSHOP STATE:
--- This version refines the incremental filter to capture changed historical
--- orders when late-arriving payment/refund activity updates order-level business
--- state. Instead of filtering only on recent ordered_at timestamps, it identifies
--- changed order_ids from the upstream intermediate.
+-- Merge only order IDs whose order, item, or payment inputs arrived or changed
+-- since the latest source_updated_at already represented in this target.
 
-with changed_orders as (
+with orders_with_payments as (
+    select * from {{ ref('int_orders_with_payments') }}
+),
+
+changed_orders as (
     {% if is_incremental() %}
         select order_id
-        from {{ ref('int_orders_with_payments') }}
-        where greatest(ordered_at, coalesce(last_paid_at, ordered_at)) >= (
-            select coalesce(dateadd(day, -3, max(ordered_at)), '1900-01-01'::timestamp_ntz)
+        from orders_with_payments
+        where source_updated_at > (
+            select coalesce(max(source_updated_at), '1900-01-01'::timestamp_ntz)
             from {{ this }}
         )
     {% else %}
-        select cast(null as varchar) as order_id
-        where false
+        select order_id
+        from orders_with_payments
     {% endif %}
 ),
 
 orders as (
-    select *
-    from {{ ref('int_orders_with_payments') }}
-
-    {% if is_incremental() %}
-        where order_id in (select order_id from changed_orders)
-    {% endif %}
+    select orders_with_payments.*
+    from orders_with_payments
+    inner join changed_orders using (order_id)
 ),
 
 shops as (
@@ -67,7 +62,8 @@ final as (
 
         -- timestamps
         orders.ordered_at::timestamp_ntz as ordered_at,
-        orders.ordered_at::date as ordered_date
+        orders.ordered_at::date as ordered_date,
+        orders.source_updated_at::timestamp_ntz as source_updated_at
     from orders
     left join shops on orders.shop_id = shops.shop_id
 )

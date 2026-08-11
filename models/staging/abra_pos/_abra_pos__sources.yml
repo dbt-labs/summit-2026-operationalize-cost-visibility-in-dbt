@@ -1,12 +1,8 @@
 version: 2
 
-# The raw Abracadabra POS tables as dbt SOURCES. Physically these are the
-# seeds in apothecaries.raw; declaring them as sources lets staging read them
-# via source() — the real-world pattern — and gives us a source contract +
-# source-level tests + a `source:` selector.
-#
-# NOTE: seeds and sources have no automatic lineage edge, so run `dbt seed`
-# before `dbt build` (seeds are static, so this is a one-time / rare step).
+# Abracadabra POS raw landing tables in the shared Snowflake training schema.
+# The transactional entities carry `ingested_at`, an operational warehouse-arrival
+# watermark used by the fct_orders incremental changed-key pattern.
 
 sources:
   - name: abra_pos
@@ -20,21 +16,33 @@ sources:
           - name: potion_sku
             description: Primary key — potion SKU (POT-0001).
             data_tests: [unique, not_null]
+
       - name: raw_orders
-        description: "Orders — one row per order."
+        description: "Orders — one row per order. `ingested_at` records the warehouse-arrival or source-update timestamp."
         columns:
           - name: order_id
             description: Primary key — order identifier (ORD-000001).
             data_tests: [unique, not_null]
+          - name: ingested_at
+            description: Operational warehouse-arrival timestamp used for incremental change detection.
+            data_tests: [not_null]
+
       - name: raw_order_items
-        description: "Order line items — one row per potion per order."
+        description: "Order line items — one row per potion per order. `ingested_at` records the warehouse-arrival or source-update timestamp."
         columns:
           - name: order_item_id
             description: Primary key — line item identifier (ITM-000001).
             data_tests: [unique, not_null]
+          - name: ingested_at
+            description: Operational warehouse-arrival timestamp used for incremental change detection.
+            data_tests: [not_null]
+
       - name: raw_payments
-        description: "Payment attempts — splits, failures, and refunds each get a row."
+        description: "Payment attempts — splits, failures, and refunds each get a row. `ingested_at` records the warehouse-arrival or source-update timestamp."
         columns:
           - name: payment_id
             description: Primary key — payment identifier (PAY-000001).
             data_tests: [unique, not_null]
+          - name: ingested_at
+            description: Operational warehouse-arrival timestamp used for incremental change detection.
+            data_tests: [not_null]

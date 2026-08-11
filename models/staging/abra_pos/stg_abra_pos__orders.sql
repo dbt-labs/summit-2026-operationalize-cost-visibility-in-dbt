@@ -18,7 +18,9 @@ renamed as (
         {{ copper_to_gold('discount_copper') }} as discount_gold,
 
         -- timestamps
-        ordered_at::timestamp_ntz as ordered_at
+        ordered_at::timestamp_ntz as ordered_at,
+        ingested_at::timestamp_ntz as ingested_at
+
     from source
 )
 

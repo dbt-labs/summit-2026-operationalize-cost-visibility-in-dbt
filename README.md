@@ -94,13 +94,12 @@ Key commerce seed sizes are roughly:
 
 These are large enough to make the optimization demos believable without making the environment cumbersome to reset.
 
-For the incremental demos, trainers do **not** need attendees to reseed data. Instead, trainers apply source-data changes directly in Snowflake using:
+For the incremental demo, trainers do **not** need attendees to reseed data. Trainers run the small weekly source delivery directly in Snowflake before the daily `fct_orders` build:
 
-- `training_assets/snowflake_scripts/01_append_orders_batch.sql`
-- `training_assets/snowflake_scripts/02_late_payment_updates.sql`
-- `training_assets/snowflake_scripts/03_reset_demo_state.sql`
+- `training_assets/snowflake_scripts/04_weekly_orders_change_batch.sql`
 
-See `docs/demo_data.md` for the trainer workflow.
+The batch applies 18 raw-source changes affecting 8 parent order IDs, using one shared ingestion watermark. See `docs/training_materials/full_demo_operations_guide.md` for the trainer workflow.
+
 
 ## Key workshop demo models
 
