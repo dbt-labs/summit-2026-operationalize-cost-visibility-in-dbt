@@ -1,4 +1,4 @@
-{{ config(materialized='incremental', incremental_strategy='merge', unique_key='order_id', on_schema_change='fail') }}
+{{ config(materialized='incremental', incremental_strategy='merge', unique_key='order_id', on_schema_change='fail', enabled=true) }}
 
 -- Order-grain fact. One row per order, with revenue/payment measures and
 -- conformed FKs to the wizard, shop, and (via the shop) fulfilling region.
@@ -8,7 +8,7 @@
 -- since the latest source_updated_at already represented in this target.
 
 with orders_with_payments as (
-    select * from {{ ref('int_orders_with_payments') }}
+    select * from {{ ref('int_orders_with_payments__optimized') }}
 ),
 
 changed_orders as (

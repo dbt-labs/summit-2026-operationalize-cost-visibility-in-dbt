@@ -1,7 +1,0 @@
-version: 2
-
-# ---------------------------------------------------------------------------
-# Semantic layer — the governance boundary for AI-assisted / self-serve
-# analytics. Consumers query these defined metrics and dimensions, not raw
-# SQL against the marts, so "revenue" means one thing everywhere.
-# ---------------------------------------------------------------------------

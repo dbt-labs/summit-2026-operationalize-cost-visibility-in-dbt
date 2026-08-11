@@ -73,6 +73,7 @@ models:
   - name: dim_wizards
     description: Wizard (customer) dimension with current guild membership.
     config:
+      tags: [unoptimized]
       contract:
         enforced: true
     columns:
@@ -155,6 +156,7 @@ models:
   - name: fct_orders
     description: Order-grain fact with revenue, payment behavior, and conformed FKs. Order-grain semantic model over fct_orders.
     config:
+      tags: [unoptimized]
       contract:
         enforced: true
     columns:
@@ -270,9 +272,11 @@ models:
   - name: fct_order_items
     description: Line-grain fact — one row per potion per order. Line-grain semantic model over fct_order_items.
     config:
+      tags: [unoptimized]
       contract:
         enforced: true
     columns:
+
       - name: order_item_id
         data_type: varchar
         description: Primary key — line item identifier.

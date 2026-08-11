@@ -1,11 +1,11 @@
 -- Customer-grain behavioral rollup based on orders.
 
 with wizards as (
-    select * from {{ ref('dim_wizards') }}
+    select * from {{ ref('dim_wizards__optimized') }}
 ),
 
 orders as (
-    select * from {{ ref('fct_orders') }}
+    select * from {{ ref('fct_orders__optimized') }}
 ),
 
 order_rollup as (

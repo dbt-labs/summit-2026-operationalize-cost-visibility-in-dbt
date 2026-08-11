@@ -1,0 +1,22 @@
+version: 2
+
+models:
+  - name: dim_wizards__optimized
+    config:
+      tags: [optimized]
+
+  - name: fct_orders__optimized
+    config:
+      tags: [optimized]
+
+  - name: fct_order_items__optimized
+    config:
+      tags: [optimized]
+
+  - name: fct_wizard_order_behavior__optimized
+    config:
+      tags: [optimized]
+
+  - name: int_orders_with_payments__optimized
+    config:
+      tags: [optimized]
