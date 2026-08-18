@@ -23,13 +23,6 @@ clean-targets:
   - "dbt_packages"
 
 # ---------------------------------------------------------------------------
-# Variables — the raw order window, used by dim_dates' date spine
-# ---------------------------------------------------------------------------
-vars:
-  date_spine_start: "2023-01-01" # earliest customer signup precedes first order
-  date_spine_end: "2026-12-31"
-
-# ---------------------------------------------------------------------------
 # Materialization + layering conventions (enforced project-wide)
 #   staging      -> view      (thin, 1:1 with source)
 #   intermediate -> ephemeral (never persisted; composed into marts)
