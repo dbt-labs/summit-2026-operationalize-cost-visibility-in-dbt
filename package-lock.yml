@@ -1,7 +1,7 @@
 packages:
 - git: https://github.com/JNStayton/cost-optimization-package.git
   name: dbt_cost_optimization_package
-  revision: 563fa9cdd0be40268cbc73d7d62f02f2471abff2
+  revision: 871485157c8fbd537c2229b52a34286296b23244
 - package: dbt-labs/dbt_utils
   name: dbt_utils
   version: 1.4.1
