@@ -4,29 +4,53 @@
 
 This project will be used in a dbt Summit training on cost optimization through dbt, using dbt + Snowflake as the working example. The workshop should teach principles that transfer cleanly to other warehouse platforms as well, including BigQuery, Databricks, and Redshift.
 
-The core story is that using dbt correctly helps teams do two things:
+The core story is that using dbt correctly helps teams:
 
-1. make queries run faster
-2. make queries read less data
+1. make queries run faster;
+2. make queries read less data; and
+3. prevent inefficient model and job patterns from recurring.
 
-The workshop should use intentional anti-patterns in this repo so attendees can work through the full FinOps cycle:
+The workshop uses intentional anti-patterns so attendees can work through the full FinOps cycle:
 
-1. identify the symptom
-2. diagnose the root cause
-3. apply the dbt fix
-4. put a prevention mechanism in place
+1. identify the symptom;
+2. diagnose the root cause;
+3. apply the dbt fix; and
+4. put a prevention mechanism in place.
 
-## Repo structure for the workshop
+## Current repository architecture
 
-Attendees will work in the primary project models:
+The repository contains two enabled DAGs with distinct relation names:
 
-- `models/staging/`
-- `models/intermediate/`
-- `models/marts/`
+- intentionally inefficient starter models in `models/intermediate/` and `models/marts/`; and
+- optimized trainer/take-home models in `models/answer_key/`.
 
-The "after" state should live in `models/answer_key/` for comparison and instructor reference. The answer key is not built in normal project runs, so it can safely hold corrected versions of workshop examples.
+Attendees work only in the starter models. Their full-build command is:
 
-Important note: today, `models/answer_key/` is currently populated for the procurement lab only. For this training, additional answer key models may need to be added there to represent the optimized end state of the cost-focused exercises.
+```text
+dbt build --exclude tag:optimized
+```
+
+They run that command at the beginning of Demo 00 and at the end of Demo 06. Between those points they use targeted builds and focal-model full refreshes. They do not inspect or build `models/answer_key/` during the live labs.
+
+Trainer benchmark targets remain selectable with:
+
+```text
+dbt build --select +tag:unoptimized
+dbt build --select +tag:optimized
+```
+
+The current workshop implementation includes:
+
+- seven facilitator outlines ordered from follow-along work to independent labs;
+- five model-level before/after examples;
+- companion answer-key notes for take-home use;
+- workload analyses under `analyses/dim_wizards/` and `analyses/fct_order_items/`;
+- trainer-managed ingestion history and prepared incremental evidence with no live source DML; and
+- one live dbt State/model-reuse job plus prepared CI, benchmark, and test-scope runs.
+
+> **Planning-history note:** The sections below preserve the design chronology that produced the current workshop. Statements phrased as “need,” “planned,” or “proposed” may describe work that is now implemented or superseded. Use this current-architecture section, `training_assets/README.md`, `training_assets/demo_outlines/`, and the focused runbooks under `docs/training_materials/` as the operational source of truth.
+
+
 
 ## Workshop design principles
 
@@ -1211,26 +1235,14 @@ Files to add for the answer key:
 - `models/answer_key/marts/<chosen_lab_model>.sql`
 - answer-key YAML/doc assets if useful for side-by-side comparison
 
-### B. Optional reporting/demo surfaces for the clustering module
+### B. Implemented reporting workloads
 
-Recommendation:
+The repeatable workshop workloads now live in:
 
-- add two or three lightweight reporting-facing demo models, views, or saved queries that repeatedly hit `fct_order_items`
+- `analyses/fct_order_items/` for clustering and pruning; and
+- `analyses/dim_wizards/` for repeated dimension-consumption queries.
 
-Preferred repo-first option:
-
-- create analysis files or lightweight demo models rather than overcomplicating the core marts
-
-Possible paths:
-
-- `analyses/order_items_perf__shop_daily.sql`
-- `analyses/order_items_perf__category_trend.sql`
-- `analyses/order_items_perf__sku_region.sql`
-
-Reason:
-
-- these give us repeatable query patterns for the pruning/clustering section
-- they also create a realistic story for identifying common filter/join columns
+Each directory contains five analysis queries. Trainers can automate them against the starter and optimized relations to generate stable query-history evidence without adding reporting models to the core DAG.
 
 ### C. Optional future module for expensive shared ephemeral logic
 
@@ -1442,29 +1454,28 @@ Notes:
 - use whichever surface best shows measurable improvement once state/model reuse is enabled in the job configuration
 - this job should stay simple enough to rerun live without a lot of setup friction
 
-## 6. Draft answer-key footprint
+## 6. Implemented answer-key footprint
 
-Recommended answer-key additions beyond the existing procurement lab assets:
+The optimized benchmark implementation now includes:
 
-### Existing-model answer keys
+### Existing-model optimized counterparts
 
-- `models/answer_key/marts/dim_wizards.sql`
-- `models/answer_key/marts/fct_orders.sql`
-- `models/answer_key/marts/fct_order_items.sql` if we want the optimized clustering config represented explicitly
-- `models/answer_key/intermediate/int_orders_with_payments.sql`
+- `models/answer_key/marts/dim_wizards__optimized.sql`
+- `models/answer_key/marts/fct_orders__optimized.sql`
+- `models/answer_key/marts/fct_order_items__optimized.sql`
+- `models/answer_key/intermediate/int_orders_with_payments__optimized.sql`
 
-### Net-new lab answer keys
+### Modular-refactor target
 
-- `models/answer_key/intermediate/<lab_intermediate_1>.sql`
-- `models/answer_key/intermediate/<lab_intermediate_2>.sql` if needed
-- `models/answer_key/marts/<lab_mart>.sql`
+- `models/answer_key/intermediate/int_wizard_order_behavior_base.sql`
+- `models/answer_key/intermediate/int_wizard_potion_preferences.sql`
+- `models/answer_key/marts/fct_wizard_order_behavior__optimized.sql`
 
-### YAML / docs answer-key support
+### YAML and documentation support
 
-Depending on how explicit we want the side-by-side comparison to be, we may also want:
-
-- answer-key YAML snippets or files for any changed contracts/tests/configs
-- a short `models/answer_key/README.md` update explaining which files correspond to which training modules
+- `models/answer_key/_optimized_marts.yml` supplies optimized tags, descriptions, mart contracts, and model-specific tests.
+- `models/answer_key/README.md` maps optimized assets to workshop modules and selectors.
+- The five companion notes in `models/answer_key/` document symptom, diagnosis, fix, evidence, and prevention.
 
 ## 7. Recommended concrete next implementation tasks
 
@@ -1591,7 +1602,7 @@ Expected contents:
 - high-cost potion line counts or similar light cost-aware preference features
 
 
-#### 3. `models/answer_key/marts/fct_wizard_order_behavior.sql`
+#### 3. `models/answer_key/marts/fct_wizard_order_behavior__optimized.sql`
 
 Purpose:
 

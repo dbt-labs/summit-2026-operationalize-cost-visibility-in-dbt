@@ -171,11 +171,11 @@ final as (
         coalesce(sum(customer_order_line_potion_payments.estimated_unit_supply_cost_gold * customer_order_line_potion_payments.quantity), 0)::number(38, 2) as estimated_total_supply_cost_gold,
         (sum(customer_order_line_potion_payments.net_revenue_gold) - coalesce(sum(customer_order_line_potion_payments.estimated_unit_supply_cost_gold * customer_order_line_potion_payments.quantity), 0))::number(38, 2) as estimated_gross_margin_gold,
         count(case when customer_order_line_potion_payments.estimated_unit_supply_cost_gold >= 30 then customer_order_line_potion_payments.order_item_id end)::integer as high_cost_potion_line_count,
-        count(case when customer_order_line_potion_payments.is_refunded then customer_order_line_potion_payments.order_id end)::integer as refunded_order_row_count,
-        count(case when customer_order_line_potion_payments.is_split_payment then customer_order_line_potion_payments.order_id end)::integer as split_payment_order_row_count,
-        count(case when customer_order_line_potion_payments.channel = 'marketplace' then customer_order_line_potion_payments.order_id end)::integer as marketplace_order_row_count,
-        count(case when customer_order_line_potion_payments.channel = 'courier_owl' then customer_order_line_potion_payments.order_id end)::integer as courier_order_row_count,
-        count(case when customer_order_line_potion_payments.channel = 'in_store' then customer_order_line_potion_payments.order_id end)::integer as in_store_order_row_count
+        count(case when customer_order_line_potion_payments.is_refunded then customer_order_line_potion_payments.order_id end)::integer as refunded_order_count,
+        count(case when customer_order_line_potion_payments.is_split_payment then customer_order_line_potion_payments.order_id end)::integer as split_payment_order_count,
+        count(case when customer_order_line_potion_payments.channel = 'marketplace' then customer_order_line_potion_payments.order_id end)::integer as marketplace_order_count,
+        count(case when customer_order_line_potion_payments.channel = 'courier_owl' then customer_order_line_potion_payments.order_id end)::integer as courier_order_count,
+        count(case when customer_order_line_potion_payments.channel = 'in_store' then customer_order_line_potion_payments.order_id end)::integer as in_store_order_count
     from customer_order_line_potion_payments
     left join favorite_category on customer_order_line_potion_payments.customer_id = favorite_category.customer_id
     group by customer_order_line_potion_payments.customer_id

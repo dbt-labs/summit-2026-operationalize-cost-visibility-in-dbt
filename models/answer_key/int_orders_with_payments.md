@@ -61,12 +61,14 @@ Expected improvements from the optimized version:
 
 ## How to compare before and after
 
-1. Build the active bad-state model and capture its Snowflake query profile.
+1. Build the active starter model and capture its Snowflake query profile.
 2. Record elapsed time, bytes scanned, rows emitted by join operators, and spill metrics if present.
-3. Build the answer-key version in `models/answer_key/intermediate/int_orders_with_payments.sql` and compare its profile to the bad-state build.
-4. Confirm that both outputs remain one row per order and expose `source_updated_at`.
-5. Run `training_assets/snowflake_scripts/04_weekly_orders_change_batch.sql`; it applies 18 raw changes affecting 8 parent order IDs.
-6. Use the optimized order-grain output as the upstream change signal for the separate `fct_orders` merge-incremental build, where only those changed order IDs are selected and merged.
+3. Let attendees independently aggregate item and payment inputs to order grain before joining.
+4. Build `int_orders_with_payments` and downstream `fct_orders` together so the persisted intermediate is refreshed.
+5. Confirm that the output remains one row per order, public columns remain stable, and `source_updated_at` still captures late item/payment activity.
+6. Compare the attendee profile with the prepared trainer evidence and, after the workshop, with `models/answer_key/intermediate/int_orders_with_payments__optimized.sql`.
+
+The trainer-managed weekly source script contributes historical evidence for late changes but is not executed during this module.
 
 
 ## Prevention takeaway

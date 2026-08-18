@@ -46,9 +46,8 @@ models:
     marts:
       +materialized: table
       +schema: costs_marts
-    # Reference solutions for the procurement lab — parsed but never built.
-    # Enable a single model locally to run/compare (e.g. `dbt build -s dim_suppliers`
-    # with `+enabled: true`), but keep the folder disabled on main.
+    # Enabled optimized workshop models. Distinct __optimized relation names and
+    # tags allow side-by-side benchmark builds without replacing starter models.
     answer_key:
       intermediate:
         +materialized: ephemeral

@@ -388,6 +388,7 @@ models:
   - name: fct_wizard_order_behavior
     description: Customer behavior mart for commercial and lifecycle analysis. One row per customer.
     config:
+      tags: [unoptimized]
       contract:
         enforced: true
     columns:
@@ -446,22 +447,22 @@ models:
       - name: high_cost_potion_line_count
         data_type: integer
         description: Count of higher-cost potion lines purchased by the wizard.
+      - name: refunded_order_count
+        data_type: integer
+        description: Intended count of refunded orders; the bad-state fanout can inflate this value.
+      - name: split_payment_order_count
+        data_type: integer
+        description: Intended count of split-payment orders; the bad-state fanout can inflate this value.
+      - name: marketplace_order_count
+        data_type: integer
+        description: Intended count of marketplace orders; the bad-state fanout can inflate this value.
+      - name: courier_order_count
+        data_type: integer
+        description: Intended count of courier orders; the bad-state fanout can inflate this value.
+      - name: in_store_order_count
+        data_type: integer
+        description: Intended count of in-store orders; the bad-state fanout can inflate this value.
 
-      - name: refunded_order_row_count
-        data_type: integer
-        description: Intentionally bad-state metric counting refunded order rows after fanout.
-      - name: split_payment_order_row_count
-        data_type: integer
-        description: Intentionally bad-state metric counting split-payment order rows after fanout.
-      - name: marketplace_order_row_count
-        data_type: integer
-        description: Intentionally bad-state metric counting marketplace order rows after fanout.
-      - name: courier_order_row_count
-        data_type: integer
-        description: Intentionally bad-state metric counting courier order rows after fanout.
-      - name: in_store_order_row_count
-        data_type: integer
-        description: Intentionally bad-state metric counting in-store order rows after fanout.
   - name: dim_suppliers
     description: Supplier dimension with supplied-ingredient count.
     config:

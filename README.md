@@ -2,174 +2,152 @@
 
 Merlin & Co. Apothecaries is a Snowflake + dbt training project built for a dbt Summit workshop on **cost optimization through dbt**.
 
-The workshop uses intentional anti-patterns in a realistic retail analytics project to show how dbt can help teams do two things:
+The workshop uses intentional anti-patterns in a realistic retail analytics project to show how dbt can help teams:
 
-1. make queries run faster
-2. make queries read less data
+1. make queries run faster;
+2. make queries read less data; and
+3. prevent inefficient model and job patterns from recurring.
 
-The repo is designed so attendees can work through the full FinOps cycle:
-
-1. identify the symptom
-2. diagnose the root cause
-3. apply the dbt fix
-4. put a prevention mechanism in place
+Every module follows symptom → diagnosis → fix → prevention.
 
 ## What this repo is for
 
-This is a hands-on training repo, not just a clean reference implementation.
+This is a hands-on training repo. The primary `models/` layers contain the intentionally messy or suboptimal workshop models. Attendees improve those models in their own branches and developer schemas.
 
-That means the primary `models/` directory now contains intentionally messy or suboptimal examples used in the workshop. The optimized end states live in `models/answer_key/`, alongside companion documentation that explains:
+Enabled optimized counterparts live in `models/answer_key/` with `__optimized` names, model properties, tests, and companion notes. They are trainer benchmark assets and take-home references. Attendees do not inspect or build them during the live labs.
 
-- the symptom
-- the root cause
-- how the issue was identified
-- what fix was applied
-- why that fix was the right one
-- how to compare before and after
+The attendee full-build command is:
+
+```text
+dbt build --exclude tag:optimized
+```
+
+Trainer benchmark DAGs remain selectable with:
+
+```text
+dbt build --select +tag:unoptimized
+dbt build --select +tag:optimized
+```
+
+Run trainer benchmark builds sequentially when they share a target schema because their upstream relations overlap.
+
+## Workshop flow
+
+Attendees run exactly two full builds:
+
+1. an opening build during project orientation to establish their developer schemas; and
+2. a closing build after all targeted model changes to compare whole-project runtime.
+
+Between them, exercises use targeted builds or focal-model full refreshes. The live workshop runs one before/after consumption query for `fct_order_items`, one for `dim_wizards`, and one dbt State/model-reuse job. Remaining workload history, incremental timing, and job comparisons are prepared in advance.
 
 ## Workshop themes
 
-The training is organized around model-level and job-level optimization patterns that transfer cleanly across platforms, even though Snowflake is the warehouse used in the demos.
+### Model-level optimizations
 
-### Model-level optimizations covered
+- workload-driven clustering and pruning;
+- view-to-table conversion for frequently queried dimensions;
+- table-to-merge-incremental conversion based on observed ingestion behavior;
+- unhealthy joins and grain alignment; and
+- refactoring oversized mixed-grain SQL into focused dbt models.
 
-- unhealthy joins / exploding joins
-- table to incremental conversion
-- refining incremental logic for late-arriving changes
-- view to table conversion for frequently queried dimensions
-- refactoring oversized all-in-one SQL into modular dbt models
-- pruning / clustering based on observed workload patterns
+### Job-level optimizations
 
-### Job-level optimizations planned
+- broad job selectors versus purpose-built selectors;
+- dbt State, deferral, and model reuse;
+- slim CI;
+- test-scope optimization; and
+- CI cleanup for incremental validation.
 
-- broad job selectors vs purpose-built selectors
-- state and deferral
-- slim CI
-- test scope optimization
-- CI cleanup support for incremental validation
+### Storage and environment topics
 
-### Storage / environment topics discussed
-
-- transient vs permanent tables
-- clone awareness
-- write amplification and churn
-- dev / CI cleanup patterns
+- write amplification and churn;
+- clustering and reclustering tradeoffs;
+- transient versus permanent tables;
+- clone awareness; and
+- development and CI cleanup patterns.
 
 ## Repo layout
 
 ```text
 models/
-├── staging/                 # stg_<system>__<entity> — source cleanup and typing
-├── intermediate/            # int_ models — joins, fanout, aggregation
-├── marts/                   # dim_ / fct_ workshop models (some intentionally bad)
-└── answer_key/              # optimized after-states + companion docs (disabled by default)
-macros/                      # shared cleaning and utility macros
-seeds/large_data/            # base training seeds loaded to APOTHECARIES.RAW
+├── staging/                 # stg_<system>__<entity> source cleanup and typing
+├── intermediate/            # shared starter/supporting intermediate models
+├── marts/                   # workshop starter marts, including intentional bad states
+└── answer_key/              # trainer/take-home __optimized models and notes
+macros/                      # shared cleanup and utility macros
+seeds/large_data/            # portable raw-data seed baseline
 training_assets/
-└── snowflake_scripts/       # trainer-run source-data scripts for incremental demos
-analyses/                    # dashboard-style workload queries for the clustering demo
+├── demo_outlines/           # facilitator-ready plans for Demos 00–06
+├── snowflake_scripts/       # setup and trainer-managed history generation
+├── README.md                # trainer handoff
+└── TODO.md                  # current delivery plan and remaining work
+analyses/
+├── dim_wizards/             # repeated dimension-consumption workload
+└── fct_order_items/         # repeated pruning/clustering workload
 docs/
-├── merlinco/
-    ├── STYLE_GUIDE.md           # modeling + naming conventions
-    ├── DATA_DICTIONARY.md       # source-table notes and deliberate raw-data quirks
-    ├── ERD.md                   # schema diagram
-└── LAB_procurement_slice.md     # legacy procurement lab brief retained in the repo
-├── training_materials/
-    ├── TRAINING_NOTES.md                         # full workshop planning and implementation notes
-    ├── full_demo_operations_guide.md             # trainer-facing data operations guide
-    ├── jobs.md                                   # trainer-facing jobs config outline and demo walkthrough
-    ├── PRESENTATION_OUTLINE.md                   # trainer-facing rough presentation outline
-
+├── merlinco/                # style guide, data dictionary, and ERD
+└── training_materials/      # presentation, operations, and jobs guides
 ```
 
 ## Data setup
 
-The stable workshop seed baseline lives in `seeds/large_data/`.
+The repository seed baseline lives in `seeds/large_data/` for portable setup and reset. Its key commerce files are approximately:
 
-Key commerce seed sizes are roughly:
+- `raw_orders`: 75k rows;
+- `raw_order_items`: 253k rows; and
+- `raw_payments`: 86k rows.
 
-- `raw_orders`: 75k rows
-- `raw_order_items`: 253k rows
-- `raw_payments`: 86k rows
+The live workshop uses a trainer-managed, larger Snowflake baseline so performance differences are visible. Attendees build into their own schemas against shared raw relations and do not reseed or run source ingestion during the workshop.
 
-These are large enough to make the optimization demos believable without making the environment cumbersome to reset.
+`training_assets/snowflake_scripts/04_weekly_orders_change_batch.sql` creates realistic new and historically changed orders for trainer-managed query-history generation. It is not part of the live attendee flow.
 
-For the incremental demo, trainers do **not** need attendees to reseed data. Trainers run the small weekly source delivery directly in Snowflake before the daily `fct_orders` build:
+## Key workshop models
 
-- `training_assets/snowflake_scripts/04_weekly_orders_change_batch.sql`
+| Sequence | Optimization | Starter model | Trainer/take-home target |
+|---:|---|---|---|
+| 01 | Workload-driven clustering | `models/marts/fct_order_items.sql` | `models/answer_key/marts/fct_order_items__optimized.sql` |
+| 02 | Frequently queried view to table | `models/marts/dim_wizards.sql` | `models/answer_key/marts/dim_wizards__optimized.sql` |
+| 03 | Full rebuild to changed-key merge incremental | `models/marts/fct_orders.sql` | `models/answer_key/marts/fct_orders__optimized.sql` |
+| 04 | Exploding join / grain alignment | `models/intermediate/int_orders_with_payments.sql` | `models/answer_key/intermediate/int_orders_with_payments__optimized.sql` |
+| 05 | Oversized mart to modular customer-grain rollups | `models/marts/fct_wizard_order_behavior.sql` | `models/answer_key/marts/fct_wizard_order_behavior__optimized.sql` |
 
-The batch applies 18 raw-source changes affecting 8 parent order IDs, using one shared ingestion watermark. See `docs/training_materials/full_demo_operations_guide.md` for the trainer workflow.
+The modular refactor also uses:
 
-
-## Key workshop demo models
-
-### Existing models intentionally worsened in `models/`
-
-- `models/intermediate/int_orders_with_payments.sql`
-  - exploding join / grain mismatch
-- `models/marts/fct_orders.sql`
-  - full-table rebuild instead of incremental
-- `models/marts/dim_wizards.sql`
-  - view instead of table for a frequently queried dimension
-
-### Net-new workshop model
-
-- `models/marts/fct_wizard_order_behavior.sql`
-  - intentionally oversized all-in-one mart for the modular refactor lab
-
-### Workload-driven clustering demo
-
-- `models/marts/fct_order_items.sql`
-  - paired with dashboard-style analysis queries in `analyses/`
-
-### Optimized answer-key versions
-
-The optimized after-states live in `models/answer_key/`.
-
-Representative examples include:
-
-- `models/answer_key/intermediate/int_orders_with_payments.sql`
-- `models/answer_key/marts/fct_orders.sql`
-- `models/answer_key/marts/dim_wizards.sql`
-- `models/answer_key/marts/fct_order_items.sql`
-- `models/answer_key/marts/fct_wizard_order_behavior.sql`
-
-Each major demo also has a companion markdown note in `models/answer_key/`.
+- `models/answer_key/intermediate/int_wizard_order_behavior_base.sql`; and
+- `models/answer_key/intermediate/int_wizard_potion_preferences.sql`.
 
 ## Quickstart
 
-```bash
+For an attendee or starter-only development build:
+
+```text
 dbt deps
 dbt parse
 dbt seed
-dbt build
+dbt build --exclude tag:optimized
 ```
 
 Notes:
 
-- `dbt seed` loads the raw CSVs into `APOTHECARIES.RAW`
-- staging models read those tables via `source()` declarations
-- the answer-key folder is disabled in normal project runs
+- `dbt seed` supports the portable repository baseline; live workshop attendees use trainer-managed shared raw data.
+- Staging models read workshop tables through `source()` declarations.
+- `--exclude tag:optimized` keeps trainer/take-home answer-key models out of attendee builds.
+- Trainers can use the tag selectors above for controlled benchmark generation.
 
-Local development uses `~/.dbt/profiles.yml` (see `profiles.example.yml`). In dbt platform environments, the connection is managed there instead.
+Local development uses `~/.dbt/profiles.yml` (see `profiles.example.yml`). In dbt Platform environments, the connection is managed there.
 
 ## Trainer notes
 
-If you are presenting or inheriting the workshop, start here:
+Start with:
 
-- `docs/TRAINING_NOTES.md`
-- `docs/demo_data.md`
-
-Those docs explain:
-
-- what each module is demonstrating
-- which model corresponds to which optimization
-- how trainer-run data changes support the incremental demos
-- how the before/after assets are organized
+- `training_assets/README.md`;
+- `training_assets/demo_outlines/`;
+- `docs/training_materials/PRESENTATION_OUTLINE.md`;
+- `docs/training_materials/full_demo_operations_guide.md`;
+- `docs/training_materials/jobs.md`; and
+- `docs/training_materials/TRAINING_NOTES.md` for the longer planning history.
 
 ## Source systems
-
-The raw data comes from three fictional source systems:
 
 | System | Example tables |
 |---|---|
@@ -177,5 +155,4 @@ The raw data comes from three fictional source systems:
 | Grimoire CRM | `raw_customers`, `raw_guilds`, `raw_guild_memberships` |
 | Alembic Ops | `raw_shops`, `raw_suppliers`, `raw_ingredients`, `raw_potion_ingredients`, `raw_brew_events` |
 
-See `docs/DATA_DICTIONARY.md` and `docs/ERD.md` for full details.
-
+See `docs/merlinco/DATA_DICTIONARY.md` and `docs/merlinco/ERD.md` for full details.

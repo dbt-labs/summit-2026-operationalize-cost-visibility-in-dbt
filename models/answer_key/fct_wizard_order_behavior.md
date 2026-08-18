@@ -56,7 +56,8 @@ After:
 
 - `int_wizard_order_behavior_base` handles customer-grain order and channel behavior
 - `int_wizard_potion_preferences` handles customer-grain item/category preference logic plus estimated cost rollups
-- the final mart assembles those two rollups into one presentation-ready customer behavior output and computes the final margin proxy
+- `fct_wizard_order_behavior__optimized` assembles those two rollups into one presentation-ready customer behavior output and computes the final margin proxy
+- the public `refunded_order_count`, `split_payment_order_count`, and channel order-count names remain stable; the optimized grain-aligned logic corrects values that are inflated by the starter model's fanout
 
 ## Expected benefit
 
@@ -70,11 +71,15 @@ Expected improvements from the optimized version:
 
 ## How to compare before and after
 
-1. Build the bad-state version from `models/marts/fct_wizard_order_behavior.sql`.
-2. Review the SQL shape and note how many responsibilities are packed into one file.
-3. Compare to the answer-key split across `models/answer_key/intermediate/` and `models/answer_key/marts/`.
-4. Confirm that the optimized version uses explicit customer-grain rollups before the final assembly step.
-5. Compare maintainability and explainability alongside runtime/query-shape improvements.
+During the workshop:
+
+1. Give attendees the Jira-style symptoms, constraints, public columns, and customer-grain acceptance criteria.
+2. Let them design focused intermediate rollups and a thin final mart without inspecting `models/answer_key/`.
+3. Build the focal `fct_wizard_order_behavior` model and compare targeted runtime, rows through joins, and query shape with prepared starter evidence.
+4. Debrief multiple valid architectures and annualize the observed cost difference.
+
+After the workshop, compare the implementation with the trainer reference under `models/answer_key/intermediate/` and `models/answer_key/marts/`.
+
 
 ## Prevention takeaway
 

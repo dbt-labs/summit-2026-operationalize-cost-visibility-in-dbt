@@ -2,21 +2,355 @@ version: 2
 
 models:
   - name: dim_wizards__optimized
+    description: Optimized wizard dimension persisted for repeated downstream use. One row per customer.
     config:
       tags: [optimized]
+      contract:
+        enforced: true
+    columns:
+      - name: customer_id
+        data_type: varchar
+        description: Primary key — wizard identifier.
+        data_tests: [unique, not_null]
+      - name: full_name
+        data_type: varchar
+        description: Wizard full name.
+      - name: email
+        data_type: varchar
+        description: Contact email, when available.
+      - name: home_region
+        data_type: varchar
+        description: Conformed home region.
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ["Northern Reaches", "Ember Coast", "Silverwood", "The Marshlands", "Crystal Vale"]
+      - name: favored_discipline
+        data_type: varchar
+        description: Favored magical discipline, normalized to lowercase.
+      - name: birth_year
+        data_type: integer
+        description: Wizard birth year.
+      - name: guild_id
+        data_type: varchar
+        description: Current guild identifier, when the wizard is a member.
+      - name: guild_name
+        data_type: varchar
+        description: Current guild name, when the wizard is a member.
+      - name: membership_tier
+        data_type: varchar
+        description: Current guild membership tier.
+      - name: is_guild_member
+        data_type: boolean
+        description: Whether the wizard currently belongs to a guild.
+        data_tests: [not_null]
+      - name: signed_up_at
+        data_type: date
+        description: Date the wizard signed up.
+      - name: member_since
+        data_type: date
+        description: Start date of the current guild membership.
 
   - name: fct_orders__optimized
+    description: Optimized merge-incremental order fact. One row per order.
     config:
       tags: [optimized]
+      contract:
+        enforced: true
+    columns:
+      - name: order_id
+        data_type: varchar
+        description: Primary key — order identifier.
+        data_tests: [unique, not_null]
+      - name: customer_id
+        data_type: varchar
+        description: FK to the optimized wizard dimension.
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_wizards__optimized')
+                field: customer_id
+      - name: shop_id
+        data_type: varchar
+        description: FK to the shop dimension.
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_shops')
+                field: shop_id
+      - name: fulfillment_region
+        data_type: varchar
+        description: Region of the fulfilling shop.
+      - name: order_status
+        data_type: varchar
+        description: Current normalized order status.
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: [completed, returned, cancelled, placed]
+      - name: channel
+        data_type: varchar
+        description: Normalized order channel.
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: [in_store, courier_owl, marketplace]
+      - name: line_item_count
+        data_type: integer
+        description: Number of distinct order lines.
+      - name: total_quantity
+        data_type: integer
+        description: Total units across the order's lines.
+      - name: gross_revenue_gold
+        data_type: number(38, 2)
+        description: Gross line revenue in gold crowns.
+      - name: discount_gold
+        data_type: number(38, 2)
+        description: Order discount in gold crowns.
+      - name: net_revenue_gold
+        data_type: number(38, 2)
+        description: Gross line revenue less the order discount.
+        data_tests: [not_null]
+      - name: amount_paid_gold
+        data_type: number(38, 2)
+        description: Successful payment amount in gold crowns.
+      - name: is_split_payment
+        data_type: boolean
+        description: Whether the order has more than one successful payment.
+      - name: had_failed_attempt
+        data_type: boolean
+        description: Whether the order has a failed payment attempt.
+      - name: is_refunded
+        data_type: boolean
+        description: Whether the order has a refund payment event.
+      - name: ordered_at
+        data_type: timestamp_ntz
+        description: Order timestamp.
+        data_tests: [not_null]
+      - name: ordered_date
+        data_type: date
+        description: Order date.
+      - name: source_updated_at
+        data_type: timestamp_ntz
+        description: Latest ingestion timestamp across the order, its items, and its payment attempts.
+        data_tests: [not_null]
 
   - name: fct_order_items__optimized
+    description: Optimized clustered line-grain fact. One row per order item.
     config:
       tags: [optimized]
+      contract:
+        enforced: true
+    columns:
+      - name: order_item_id
+        data_type: varchar
+        description: Primary key — order-item identifier.
+        data_tests: [unique, not_null]
+      - name: order_id
+        data_type: varchar
+        description: FK to the optimized order fact.
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('fct_orders__optimized')
+                field: order_id
+      - name: potion_sku
+        data_type: varchar
+        description: FK to the potion dimension.
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_potions')
+                field: potion_sku
+      - name: customer_id
+        data_type: varchar
+        description: Customer identifier denormalized from the order.
+      - name: shop_id
+        data_type: varchar
+        description: Shop identifier denormalized from the order.
+      - name: quantity
+        data_type: integer
+        description: Units sold on this line.
+      - name: unit_price_gold
+        data_type: number(38, 2)
+        description: Unit price in gold crowns.
+      - name: line_revenue_gold
+        data_type: number(38, 2)
+        description: Line revenue in gold crowns.
+        data_tests: [not_null]
+      - name: ordered_at
+        data_type: timestamp_ntz
+        description: Parent order timestamp.
+      - name: ordered_date
+        data_type: date
+        description: Parent order date and leading clustering key.
 
   - name: fct_wizard_order_behavior__optimized
+    description: Optimized customer behavior mart assembled from customer-grain rollups. One row per customer.
     config:
       tags: [optimized]
+      contract:
+        enforced: true
+    columns:
+      - name: customer_id
+        data_type: varchar
+        description: Primary key — wizard identifier.
+        data_tests: [unique, not_null]
+      - name: full_name
+        data_type: varchar
+        description: Wizard full name.
+      - name: home_region
+        data_type: varchar
+        description: Conformed home region.
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ["Northern Reaches", "Ember Coast", "Silverwood", "The Marshlands", "Crystal Vale"]
+      - name: guild_name
+        data_type: varchar
+        description: Current guild name, if any.
+      - name: membership_tier
+        data_type: varchar
+        description: Current guild membership tier, if any.
+      - name: is_guild_member
+        data_type: boolean
+        description: Whether the wizard currently belongs to a guild.
+        data_tests: [not_null]
+      - name: first_order_at
+        data_type: timestamp_ntz
+        description: Timestamp of the wizard's first order.
+      - name: latest_order_at
+        data_type: timestamp_ntz
+        description: Timestamp of the wizard's most recent order.
+      - name: days_since_last_order
+        data_type: integer
+        description: Days since the wizard's most recent order.
+      - name: lifetime_order_count
+        data_type: integer
+        description: Count of distinct orders placed by the wizard.
+      - name: lifetime_net_revenue_gold
+        data_type: number(38, 2)
+        description: Lifetime net revenue in gold crowns.
+      - name: average_order_value_gold
+        data_type: number(38, 2)
+        description: Average net revenue per order.
+      - name: total_units_purchased
+        data_type: integer
+        description: Total units purchased across all order lines.
+      - name: favorite_potion_category
+        data_type: varchar
+        description: Most frequently purchased potion category.
+      - name: regulated_potion_line_count
+        data_type: integer
+        description: Count of regulated-potion order lines.
+      - name: estimated_total_supply_cost_gold
+        data_type: number(38, 2)
+        description: Estimated lifetime potion supply cost in gold crowns.
+      - name: estimated_gross_margin_gold
+        data_type: number(38, 2)
+        description: Lifetime net revenue less estimated supply cost.
+      - name: high_cost_potion_line_count
+        data_type: integer
+        description: Count of higher-cost potion lines purchased.
+      - name: refunded_order_count
+        data_type: integer
+        description: Count of refunded orders.
+      - name: split_payment_order_count
+        data_type: integer
+        description: Count of split-payment orders.
+      - name: marketplace_order_count
+        data_type: integer
+        description: Count of marketplace orders.
+      - name: courier_order_count
+        data_type: integer
+        description: Count of courier orders.
+      - name: in_store_order_count
+        data_type: integer
+        description: Count of in-store orders.
 
   - name: int_orders_with_payments__optimized
+    description: Grain-aligned order rollup that aggregates items and payments before joining. One row per order.
     config:
       tags: [optimized]
+    columns:
+      - name: order_id
+        description: Primary key — order identifier.
+        data_tests: [unique, not_null]
+      - name: customer_id
+        description: Customer placing the order.
+      - name: shop_id
+        description: Shop fulfilling the order.
+      - name: order_status
+        description: Normalized order status.
+      - name: channel
+        description: Normalized order channel.
+      - name: line_item_count
+        description: Number of order lines.
+      - name: total_quantity
+        description: Total units across all lines.
+      - name: gross_revenue_gold
+        description: Gross line revenue in gold crowns.
+      - name: discount_gold
+        description: Order discount in gold crowns.
+      - name: net_revenue_gold
+        description: Gross line revenue less discount.
+      - name: amount_paid_gold
+        description: Successful payment amount in gold crowns.
+      - name: is_split_payment
+        description: Whether the order has multiple successful payments.
+      - name: had_failed_attempt
+        description: Whether the order has a failed payment attempt.
+      - name: is_refunded
+        description: Whether the order has a refund event.
+      - name: ordered_at
+        description: Order timestamp.
+      - name: last_paid_at
+        description: Latest payment-attempt timestamp.
+      - name: source_updated_at
+        description: Latest ingestion timestamp across the order and its child records.
+        data_tests: [not_null]
+
+  - name: int_wizard_order_behavior_base
+    description: Optimized customer-grain rollup of order value, recency, payment behavior, and channel usage.
+    config:
+      tags: [optimized]
+    columns:
+      - name: customer_id
+        description: Primary key — wizard identifier.
+        data_tests: [unique, not_null]
+      - name: lifetime_order_count
+        description: Count of distinct orders placed by the wizard.
+      - name: lifetime_net_revenue_gold
+        description: Lifetime net revenue in gold crowns.
+      - name: average_order_value_gold
+        description: Average net revenue per order.
+      - name: refunded_order_count
+        description: Count of refunded orders.
+      - name: split_payment_order_count
+        description: Count of split-payment orders.
+      - name: marketplace_order_count
+        description: Count of marketplace orders.
+      - name: courier_order_count
+        description: Count of courier orders.
+      - name: in_store_order_count
+        description: Count of in-store orders.
+
+  - name: int_wizard_potion_preferences
+    description: Optimized customer-grain rollup of potion preferences, units, regulation, and estimated supply cost.
+    config:
+      tags: [optimized]
+    columns:
+      - name: customer_id
+        description: Primary key — wizard identifier for customers with potion purchases.
+        data_tests: [unique, not_null]
+      - name: total_units_purchased
+        description: Total potion units purchased.
+      - name: favorite_potion_category
+        description: Most frequently purchased potion category.
+      - name: regulated_potion_line_count
+        description: Count of regulated-potion order lines.
+      - name: estimated_total_supply_cost_gold
+        description: Estimated potion supply cost in gold crowns.
+        data_tests: [not_null]
+      - name: high_cost_potion_line_count
+        description: Count of higher-cost potion lines purchased.

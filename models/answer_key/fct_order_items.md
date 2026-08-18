@@ -23,7 +23,7 @@ This pattern is identified by looking for:
 - common filtering on a small set of dimensions
 - query history and query profiles showing poor pruning and larger-than-expected scans
 
-The five analysis queries in `analyses/order_items_perf__*.sql` are the workload surface used to establish that pattern in the workshop.
+The five analysis queries under `analyses/fct_order_items/` are the workload surface used to establish that pattern in the workshop.
 
 ## Optimization applied
 
@@ -65,40 +65,37 @@ Expected improvements from the optimized version:
 
 ## How to run the workload
 
-Use the five analysis files in `analyses/` as the repeated dashboard workload for this module. Execute them with `dbt show` so they run in Snowflake and generate query history/profile data for the before/after comparison.
+The five analysis files under `analyses/fct_order_items/` create the repeated dashboard workload used to establish query history and clustering candidates. Trainers should automate all five before the workshop so frequency and filter patterns are visible.
 
-Recommended commands:
+During the live module, run only one representative query before and after:
 
 ```text
-dbt show --select path:analyses/order_items_perf__daily_shop_sales.sql
-dbt show --select path:analyses/order_items_perf__shop_category_mix.sql
-dbt show --select path:analyses/order_items_perf__top_skus_by_shop.sql
-dbt show --select path:analyses/order_items_perf__daily_regulated_sales.sql
-dbt show --select path:analyses/order_items_perf__shop_customer_basket.sql
+dbt show --select path:analyses/fct_order_items/daily_shop_sales.sql
 ```
 
 Recommended trainer flow:
 
-1. Run the five workload analyses against the bad-state project.
-2. Review Snowflake query history / query profile to confirm the dominant filter pattern on `ordered_date` and `shop_id`.
-3. Apply the clustered answer-key version of `fct_order_items`.
-4. Re-run the same five analyses.
-5. Compare scan volume, pruning behavior, and runtime before and after clustering.
+1. Use prepared history from all five analyses to establish repeated filtering on `ordered_date` and `shop_id`.
+2. Run `daily_shop_sales.sql` once against the attendee's unclustered relation.
+3. Review its Snowflake profile and the trainer's clustering-candidate automation.
+4. Apply clustering to the starter `fct_order_items` model and full-refresh that focal model.
+5. Run the exact same representative query again.
+6. Compare partitions scanned, bytes scanned, pruning, elapsed time, and write/reclustering cost.
 
 Notes:
 
 - `dbt show` executes the analysis SQL in Snowflake.
-- The goal is not to return a huge result set; the goal is to generate a consistent workload and inspect how Snowflake executes it.
-- Keep the workload queries unchanged before and after clustering so the comparison stays clean.
-
+- The other analyses exist to build stable workload history, not to consume live workshop time.
+- Keep the representative SQL and filters unchanged before and after.
+- Clustering can add producer and reclustering cost; include that in the payback calculation.
 
 ## How to compare before and after
 
-1. Run the five analysis queries in `analyses/order_items_perf__*.sql` against the bad-state project.
-2. Review query history and query profile to confirm repeated filtering by date and shop.
-3. Compare to the answer-key version in `models/answer_key/marts/fct_order_items.sql`.
-4. Re-run the same analyses after clustering is applied.
-5. Compare scan volume, pruning behavior, and runtime.
+1. Review the accumulated five-query workload history against the starter relation.
+2. Run one representative query live before and after the focal-model full refresh.
+3. Compare scan volume, pruning behavior, runtime, and clustering maintenance cost.
+4. After the workshop, compare the implementation with `models/answer_key/marts/fct_order_items__optimized.sql`.
+
 
 ## Prevention takeaway
 

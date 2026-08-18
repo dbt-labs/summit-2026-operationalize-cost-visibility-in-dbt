@@ -56,11 +56,15 @@ Expected improvements from the optimized version:
 
 ## How to compare before and after
 
-1. Build the bad-state version of `dim_wizards` from the main DAG.
-2. Run a representative downstream query or join that uses the dimension.
-3. Review the query profile and note that the view logic is recomputed.
-4. Compare to the answer-key version in `models/answer_key/marts/dim_wizards.sql`.
-5. Confirm that persisting the dimension reduces repeated query work.
+During the workshop:
+
+1. Run one representative `analyses/dim_wizards/` consumer against the starter view.
+2. Review the profile and identify repeated customer/membership enrichment.
+3. Change the starter model to a table and build only `dim_wizards`.
+4. Run the exact same consumer again and compare the persisted read.
+
+After the workshop, compare the attendee implementation with `models/answer_key/marts/dim_wizards__optimized.sql`.
+
 
 ## Prevention takeaway
 

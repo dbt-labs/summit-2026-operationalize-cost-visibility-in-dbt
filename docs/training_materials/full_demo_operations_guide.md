@@ -1,145 +1,195 @@
 # Demo data operations guide
 
-This document is the trainer-facing playbook for the workshop data foundation.
+This is the trainer-facing playbook for the workshop data foundation, attendee build flow, and prepared performance evidence.
 
-## Purpose
+## Operating model
 
-Attendees build dbt models into their own schemas against trainer-managed shared source data. Trainers maintain a large Snowflake source baseline, run one small weekly source-ingestion batch, and use the following daily `fct_orders` build to demonstrate how a merge incremental avoids recomputing unchanged history.
+Attendees build dbt models into their own schemas against trainer-managed shared Snowflake source data. They workshop changes directly in the starter models and do not inspect or build `models/answer_key/` during the live exercises.
 
-This guide exists so the workshop is:
+The attendee full-build command is:
 
-- reproducible
-- easy to hand off to a co-trainer or substitute presenter
-- explicit about the source-ingestion and dbt-build cadence
+```text
+dbt build --exclude tag:optimized
+```
+
+Attendees run exactly two full builds:
+
+1. at the beginning of Demo 00 to establish all development relations; and
+2. at the end of Demo 06 to compare the final project runtime with the opening baseline.
+
+Between those points, use targeted builds or focal-model full refreshes only. Start the opening build as early as possible so it runs while trainers introduce the project and evidence framework.
+
+Trainer-only benchmark DAGs remain available:
+
+```text
+dbt build --select +tag:unoptimized
+dbt build --select +tag:optimized
+```
+
+Run them sequentially when they share a target schema because their staging and supporting dependencies overlap.
 
 ## Base dataset
 
-The trainer-managed shared source schema contains the large baseline for the 12 raw source entities. The cost/performance exercises primarily use:
+The trainer-managed shared raw schema contains the large baseline for all 12 source entities. The performance exercises primarily use:
 
-- `raw_orders`
-- `raw_order_items`
-- `raw_payments`
-- `raw_customers`
-- `raw_guild_memberships`
-- `raw_brew_events`
+- `raw_orders`;
+- `raw_order_items`;
+- `raw_payments`;
+- `raw_customers`;
+- `raw_guild_memberships`; and
+- `raw_brew_events`.
 
-`raw_orders`, `raw_order_items`, and `raw_payments` include `ingested_at`, the operational watermark used by the `fct_orders` incremental exercise.
+`raw_orders`, `raw_order_items`, and `raw_payments` include `ingested_at`, the operational signal used to establish historical arrival cadence and changed-key behavior for the incremental exercise.
 
-## Trainer-run Snowflake script
+The smaller CSV baseline under `seeds/large_data/` exists for portable setup and reset. Attendees do not reseed shared raw data during the live workshop.
 
-The trainer-operated Snowflake script lives in `training_assets/snowflake_scripts/`:
+## Weekly source batch: trainer evidence generation only
 
-- `04_weekly_orders_change_batch.sql`
+The script is:
 
-Run it weekly before the daily `fct_orders` build. It assigns one `batch_ingested_at` timestamp to every changed raw record.
+- `training_assets/snowflake_scripts/04_weekly_orders_change_batch.sql`.
 
-### `04_weekly_orders_change_batch.sql`
+It creates a realistic mixture of new and changed order activity with one `batch_ingested_at` timestamp:
 
-Purpose:
+- 4 new orders;
+- 7 order items for those orders;
+- 3 successful payments for new orders;
+- 2 late refund events for historical orders;
+- 2 corrections to existing orders; and
+- 18 raw changes affecting 8 parent `order_id`s: 4 new and 4 historical.
 
-- simulates a small weekly source delivery against large order history
-- supplies new and changed order inputs for the merge-incremental demo
-- proves that recurring warehouse work should scale with changed order IDs instead of total history
+The script is used before the workshop to accumulate ingestion and model-query history that demonstrates:
 
-Change mix per run:
+- a large historical target with a small changed-row ratio;
+- repeated full scans and unnecessary bytes written by the table materialization;
+- late changes to existing order keys; and
+- why a merge incremental keyed by `order_id` fits the observed arrival pattern.
 
-- 4 new orders
-- 7 new order items for those orders
-- 3 successful payments for new orders
-- 2 late refund events for historical orders
-- 2 corrections to historical orders
-- 18 raw-source changes affecting 8 parent `order_id`s: 4 new and 4 historical
+Do not run this script live. The incremental module uses prepared query history, profiles, and build screenshots. No live baseline reset or attendee ingestion step is required.
 
-Expected downstream behavior:
+The script dynamically allocates IDs for new records. Each normal execution creates a new batch. It is intentionally append-oriented and is not a replay-idempotent production ingestion process.
 
-- `int_orders_with_payments` recomputes the order-grain output and exposes the shared operational change signal as `source_updated_at`
-- answer-key `fct_orders` inserts the 4 new order IDs and updates the 4 changed historical order IDs through its merge incremental
-- unchanged historical order IDs are not selected for the merge
+## Trainer preflight
 
-The script dynamically allocates IDs for the four new orders, so each normal weekly run creates new records. It is intentionally append-oriented for the workshop and is not retry-idempotent: a duplicate execution appends another batch of four new orders. The historical corrections still receive the new batch watermark on each run.
+1. Confirm the large baseline exists in `APOTHECARIES.RAW`.
+2. Confirm raw primary keys are unique and order-item/payment foreign keys resolve to `raw_orders`.
+3. Confirm `ingested_at` is populated on raw orders, order items, and payments.
+4. Run `dbt parse --no-partial-parse`.
+5. Confirm the attendee exclusion returns no answer-key nodes:
 
-## Recommended trainer workflow
+```text
+dbt ls --select path:models/answer_key --exclude tag:optimized
+```
 
-### Before the workshop
+6. Confirm the trainer benchmark selectors:
 
-1. Confirm the large baseline is available in the shared Snowflake raw schema.
-2. Confirm the raw order, item, and payment tables have non-null `ingested_at` values.
-3. Confirm the active bad-state `fct_orders` is configured as a daily full-table rebuild and the answer key is the merge-incremental implementation.
-4. Rehearse `04_weekly_orders_change_batch.sql` and record the expected 8 changed parent order IDs in the batch output.
+```text
+dbt ls --select tag:unoptimized --resource-type model --output name
+dbt ls --select tag:optimized --resource-type model --output name
+```
 
-### During the `fct_orders` demo
+7. Build both trainer benchmark DAGs sequentially and confirm tests pass.
+8. Rehearse the attendee opening and closing command in a clean developer schema.
+9. Capture prepared evidence for each module and verify that screenshots show the warehouse, query, relation, and timing context.
+10. Confirm the live dbt State job and all pre-run job examples are available in the workshop account.
 
-1. Start from the current shared source state and have attendees build the bad-state `fct_orders` as a full table.
-2. Capture its Snowflake query profile: bytes scanned, source rows processed, target write work, elapsed time, and warehouse credits.
-3. Have attendees apply the answer-key design: `incremental_strategy='merge'`, `unique_key='order_id'`, and changed-key selection from `source_updated_at`.
-4. Run the answer-key model once with `--full-refresh` to establish its target.
-5. Run `training_assets/snowflake_scripts/04_weekly_orders_change_batch.sql`.
-6. Run the daily answer-key `fct_orders` build incrementally.
-7. Confirm that the batch contains 18 raw changes affecting 8 parent order IDs, then compare its profile to the full rebuild. The expected result is 4 inserts and 4 updates, with unchanged history untouched.
+## Attendee build schedule
 
-### After the workshop
+### Opening full build
 
-1. Record the observed before/after profile metrics and any workshop-specific notes.
-2. Leave the shared source state in place for the next scheduled weekly batch; the script allocates new IDs dynamically.
-3. If a rehearsal requires a pristine baseline, recreate or restore the trainer-managed raw source state outside the workshop runbook. There is no routine reset script for the append-oriented batch.
+Run during Demo 00:
 
-## Demo dependencies by module
+```text
+dbt build --exclude tag:optimized
+```
 
-### `fct_orders`
+Record the total runtime. Continue project orientation while the command runs.
 
-Depends on:
+### Targeted model work
 
-- large shared source baseline
-- `04_weekly_orders_change_batch.sql`, run before the daily incremental build
-- `int_orders_with_payments.source_updated_at` as the order-grain changed-key watermark
+Use the narrowest selector that executes the changed SQL and its tests:
 
-### `int_orders_with_payments`
+- clustering: full-refresh `fct_order_items` after adding `cluster_by`;
+- dimension persistence: build `dim_wizards` after changing the materialization;
+- incremental orders: full-refresh `fct_orders` after implementing the incremental configuration, then use prepared screenshots for recurring-run evidence;
+- exploding join: full-refresh `fct_orders` so the changed `int_orders_with_payments` SQL executes in its downstream model; and
+- customer behavior refactor: full-refresh `fct_wizard_order_behavior` after creating the focused intermediates and thin mart.
 
-Depends on:
+Exact commands belong in the corresponding facilitator outlines. Trainers should pace these targeted builds across the room and use fallback screenshots if warehouse concurrency makes live timings noisy.
 
-- large shared source baseline
+### Closing full build
 
-Note:
+Run at the end of Demo 06:
 
-- the join-health demo benefits from multi-line-order and multi-payment behavior in the base data. Its primary proof is the model-build query profile; it does not require trainer-run DML during the session.
+```text
+dbt build --exclude tag:optimized
+```
 
-### `fct_order_items`
+Compare with the opening runtime, then pair that result with model-level and consumption-query evidence. The current trainer benchmark improved from 3:13 to 2:46: 27 seconds, or 14.0%. A linear 30-minute illustration becomes approximately 25:48, but trainers should avoid treating that scale-up as a precise credit forecast.
 
-Depends on:
+## Workload history and live queries
 
-- large shared source baseline
+Ten analysis queries exist to create representative history:
 
-Note:
+- five under `analyses/fct_order_items/`; and
+- five under `analyses/dim_wizards/`.
 
-- the pruning/clustering module uses recurring filtered workload queries against this fact.
+Trainers may automate all ten before the workshop to establish stable query history. During the workshop, run only:
 
-### `dim_wizards`
+- one representative `fct_order_items` query before and after clustering; and
+- one representative `dim_wizards` consumer query before and after persistence.
 
-Depends on:
+Keep each before/after SQL statement and filter set stable. Use the accumulated history to explain frequency and candidate selection without making 40+ attendees wait for ten live queries.
 
-- large shared source baseline indirectly through downstream model usage patterns
+## Dependencies by module
 
-### `fct_wizard_order_behavior`
+### Clustering and pruning
 
-Depends on:
+- Focal model: `fct_order_items`.
+- Uses repeated history from `analyses/fct_order_items/`.
+- Requires a focal-model full refresh to apply clustering.
+- Compare partitions scanned, bytes scanned, pruning, elapsed time, and write/reclustering tradeoffs.
 
-- large shared source baseline
-- `int_potion_supply_cost` as the estimated cost-proxy input for the enriched lab version
+### Dimension materialization
 
-Note:
+- Focal model: `dim_wizards`.
+- Uses repeated history from `analyses/dim_wizards/`.
+- Compare one representative consumer query before and after persistence.
 
-- this lab is primarily about model architecture and refactoring; the light cost enrichment gives it a believable commercial lens without turning it into a procurement demo.
+### Incremental orders
 
-## Safety notes
+- Focal model: `fct_orders`.
+- Uses prepared historical ingestion and build evidence.
+- Requires no live source DML.
+- Discuss `merge`, target grain, `unique_key`, late updates, and recurring versus initial full-refresh cost.
 
-- Run the weekly batch once per scheduled delivery; duplicate execution appends another set of four new orders.
-- Keep the batch timestamp visible in the script output and record it with the corresponding daily build profile.
-- Do not manually alter the dynamically allocated IDs between runs.
-- The fixed historical correction targets are `ORD-000025000`, `ORD-000075000`, `ORD-000050000`, and `ORD-000100000`.
-- For a true clean-state rehearsal, restore the shared raw source baseline through the trainer’s Snowflake environment process rather than ad hoc deletes.
+### Join health
 
-## Open implementation tasks
+- Edited model: `int_orders_with_payments`.
+- Executed through the downstream `fct_orders` build.
+- Requires multi-line orders and multiple payment attempts in the base data.
+- Refer back to the target-grain concept during the refactor module.
 
-- document the final baseline row counts once the trainer-managed source state is locked
-- add the scheduled weekly-ingestion and daily-build job identifiers when orchestration is finalized
-- add trainer-specific runbook notes discovered during rehearsal
+### Modular customer behavior
+
+- Focal model: `fct_wizard_order_behavior`.
+- Expected design uses focused customer-grain rollups before final assembly.
+- Uses `int_potion_supply_cost` as the estimated cost-proxy input.
+- Compare targeted build time, rows through joins, query shape, and annualized execution cost.
+
+## Safety and recovery
+
+- Run the weekly batch only as part of planned trainer evidence generation.
+- Keep its timestamp and affected IDs with the corresponding evidence.
+- Do not manually alter dynamically allocated IDs.
+- Restore a pristine raw baseline through the trainer's Snowflake environment process rather than ad hoc deletes.
+- Keep prepared screenshots or saved query profiles for every warehouse-dependent comparison.
+- If an attendee's opening build is still running when Demo 01 starts, pair them with a completed schema or use trainer relations for profile review while the build finishes.
+
+## Remaining environment-specific tasks
+
+- Record final shared-baseline row counts after the workshop account is provisioned.
+- Add final job and environment identifiers.
+- Record warehouse size, thread count, auto-suspend, and cache assumptions used for benchmark captures.
+- Automate the ten analysis queries used to accumulate workload history.
+- Capture stable opening/closing build evidence and targeted-model fallback screenshots.
