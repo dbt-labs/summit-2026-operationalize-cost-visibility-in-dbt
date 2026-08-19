@@ -10,11 +10,13 @@ vars:
 # ---------------------------------------------------------------------------
   dbt_cost_optimization_enabled: true
   snowflake_enterprise_edition: false
-  table_materialization_lookback_days: 30
+  table_materialization_lookback_days: 15
+  table_materialization_min_query_count: 20
   clustering_candidates_min_size_gb: 1
   clustering_candidates_min_query_count: 1
-  clustering_candidates_lookback_days: 30
-  incremental_candidates_lookback_days: 30
+  clustering_candidates_lookback_days: 15
+  incremental_candidates_lookback_days: 15
   incremental_candidates_min_build_time_sec: 60
   incremental_candidates_min_size_gb: 0
   incremental_candidates_min_qualified_build_days: 1
+  credit_rate_usd: 3
