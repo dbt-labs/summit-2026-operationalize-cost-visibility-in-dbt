@@ -75,7 +75,7 @@ final as (
         -- timestamps
         ordered_at,
         max(paid_at) as last_paid_at,
-        greatest(
+        greatest_ignore_nulls(
             max(order_ingested_at),
             max(order_item_ingested_at),
             max(payment_ingested_at)

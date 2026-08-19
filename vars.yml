@@ -18,6 +18,8 @@ vars:
   clustering_candidates_lookback_days: 15
   incremental_candidates_lookback_days: 15
   incremental_candidates_min_build_time_sec: 60
+  incremental_candidates_min_compute_waste_avg_build_sec: 15
+  incremental_candidates_min_compute_waste_score: 2
   incremental_candidates_min_size_gb: 0
   incremental_candidates_min_qualified_build_days: 1
   credit_rate_usd: 3

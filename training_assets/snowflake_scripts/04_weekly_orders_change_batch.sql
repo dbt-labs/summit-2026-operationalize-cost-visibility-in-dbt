@@ -56,10 +56,10 @@ using (
     select
         order_id,
         case batch_order_number
-            when 1 then 'WIZ-0000123'
-            when 2 then 'WIZ-0004567'
-            when 3 then 'WIZ-0008910'
-            when 4 then 'WIZ-0012345'
+            when 1 then 'WIZ-00000123'
+            when 2 then 'WIZ-00004567'
+            when 3 then 'WIZ-00008910'
+            when 4 then 'WIZ-00012345'
         end as customer_id,
         case batch_order_number
             when 1 then 'SHP-04'
@@ -196,7 +196,10 @@ select
     'refunded' as status,
     definitions.paid_at,
     $batch_ingested_at as ingested_at
-from weekly_batch_keys as batch
+from (
+    select max(max_payment_number) as max_payment_number
+    from weekly_batch_keys
+) as batch
 cross join (
     select * from values
         (4, 'ORD-000025000', 'coin', '403', '2026-08-11 14:14:47'),
