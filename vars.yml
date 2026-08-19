@@ -12,6 +12,7 @@ vars:
   snowflake_enterprise_edition: false
   table_materialization_lookback_days: 15
   table_materialization_min_query_count: 20
+  suppress_staging_materialization_recs: true
   clustering_candidates_min_size_gb: 1
   clustering_candidates_min_query_count: 1
   clustering_candidates_lookback_days: 15
