@@ -1,7 +1,8 @@
 ----------------------------------------------------------------------
 -- 1. QUERIES AGAINST DIM_WIZARDS
 ----------------------------------------------------------------------
-
+-- These are the compiled queries in analyses/
+-- Update them with your own refs before running!
 -- For unoptimized models
 
 -- Query 1: guild_tier_customer_value

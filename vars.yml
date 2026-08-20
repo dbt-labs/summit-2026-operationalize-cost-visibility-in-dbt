@@ -8,7 +8,7 @@ vars:
 # ---------------------------------------------------------------------------
 # Cost Optimization Package Customizations
 # ---------------------------------------------------------------------------
-  dbt_cost_optimization_enabled: true
+  dbt_cost_optimization_enabled: false
   snowflake_enterprise_edition: false
   table_materialization_lookback_days: 15
   table_materialization_min_query_count: 20
