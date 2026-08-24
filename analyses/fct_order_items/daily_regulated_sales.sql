@@ -9,8 +9,10 @@ with base as (
     from {{ ref('fct_order_items') }} as order_items
     left join {{ ref('dim_potions') }} as potions
         on order_items.potion_sku = potions.potion_sku
+    inner join {{ ref('dim_dates') }} as dates
+        on order_items.ordered_date = dates.date_day
     where order_items.ordered_date between '2026-04-01' and '2026-06-30'
-      and order_items.shop_id in ('SHP-01', 'SHP-04', 'SHP-09', 'SHP-14')
+      and not dates.is_weekend
       and potions.is_regulated
 ),
 
