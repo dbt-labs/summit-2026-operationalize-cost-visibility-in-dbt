@@ -36,4 +36,3 @@ seeds:
     description: "Alembic Ops recipe bridge — composite key (potion_sku, ingredient_id). Source: alembic_ops.raw_potion_ingredients."
   - name: raw_brew_events
     description: "Alembic Ops production batches. Source: alembic_ops.raw_brew_events."
-
