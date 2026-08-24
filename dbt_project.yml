@@ -36,6 +36,7 @@ models:
       +schema: costs_staging
     intermediate:
       +materialized: ephemeral
+      +schema: costs_intermediate
     marts:
       +materialized: table
       +schema: costs_marts
@@ -44,6 +45,7 @@ models:
     answer_key:
       intermediate:
         +materialized: ephemeral
+        +schema: costs_intermediate
       marts:
         +materialized: table
         +schema: costs_marts
@@ -51,6 +53,8 @@ models:
 
 seeds:
   merlinco_apothecaries:
+    +enabled: false
+
     +database: apothecaries
     +schema: costs_raw
     # Load every raw column as text so the deliberate quirks (mixed case,
