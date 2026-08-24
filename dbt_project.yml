@@ -31,6 +31,8 @@ clean-targets:
 models:
   merlinco_apothecaries:
     +database: apothecaries
+    +state:
+      lag_tolerance: "0s"
     staging:
       +materialized: view
       +schema: costs_staging

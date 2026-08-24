@@ -13,41 +13,65 @@ Attendees can distinguish dbt State, state-based selection, deferral, and model 
 
 ## Setup and prerequisites
 
-- The workshop account has a rehearsed State/model-reuse job.
+- The workshop account has matching State-disabled and State-enabled jobs for one graph; both use the same Git SHA, environment, warehouse, threads, and selector.
+- The State-enabled job has been run at least twice. Its first run establishes State metadata; its second unchanged run is the fallback reuse evidence.
+- Staging views use explicit column lists. Views containing `select *` anywhere are rebuilt by State and weaken the demo.
+- The project config sets `lag_tolerance: "0s"`, so the three scripted batch ingestions invalidate affected nodes immediately.
 - A successful fallback run is available if the live job queues or fails.
 - Prepared before/after CI, benchmark, and test-scope runs are open in browser tabs.
-- Job environment, warehouse, threads, state comparison, and deferral settings are recorded.
 - Attendees have their opening full-build runtime from Demo 00.
 
 ## Facilitator flow
 
 ### 1. Trigger the State/model-reuse job — 1 minute
 
-Trigger the prepared job once. Its command should exclude the take-home answer key:
+Trigger the already-primed job once, before applying another source batch. Use the selector matching the prepared graph:
 
 ```text
+# Starter graph
 dbt build --exclude tag:optimized
+
+# Optimized graph
+dbt build --exclude tag:unoptimized
 ```
 
-Do not trigger the benchmark, CI, or test-scope jobs live.
+Do not switch graph selectors between the State-disabled and State-enabled comparison runs. Do not trigger the benchmark, CI, or test-scope jobs live.
 
 ### 2. Explain dbt State while the job runs — 7 minutes
 
 Cover these distinctions explicitly:
 
-- **State artifact:** a prior manifest represents a comparison point for project resources.
-- **State comparison:** dbt identifies resources that are new, modified, or unchanged.
-- **State selector:** expressions such as `state:modified+` control which nodes enter a command.
+- **Managed dbt State:** compares rendered logic, relevant config, relation availability, and upstream freshness to choose reuse, clone, or a normal build.
+- **First versus second State run:** the first run captures a baseline; the next unchanged run demonstrates reuse.
+- **State selector:** expressions such as `state:modified+` control which nodes enter a command and are separate from managed State reuse.
 - **Deferral:** eligible `ref()` calls resolve to existing relations in another environment.
-- **Model reuse:** supported platform configuration avoids recomputing eligible unchanged work.
+- **Model reuse:** selected unchanged work can be skipped or cloned instead of recomputed.
+- **Incremental compilation:** the initial full-load branch and later `is_incremental()` branch produce different rendered SQL, so the transition run correctly rebuilds.
 
-Use one lineage example from the workshop. Explain why code revision, environment configuration, state artifact, source behavior, and relation availability all affect whether reuse is safe.
+Explain the workshop State config in plain English:
+
+- `lag_tolerance: "0s"` means an upstream change is eligible to rebuild immediately. The default `45m` is a debounce window after a change, which would make the live ingestion batches appear unchanged if the job runs right away.
+- `require_fresh_data_from: any` means one changed direct parent is enough; keep it so order corrections, item corrections, and late payments each propagate.
+- `evaluate_volatile_sql: false` treats `current_date` and similar expressions as stable for reuse. Turn it on only where a changing runtime value must refresh the business result.
+- `pre_clone: if_missing` mainly protects incrementals and snapshots in fresh dev/CI schemas.
+- `execute_hooks_on_any_reuse: false` avoids running hooks when the model itself is reused.
+
+Use the order lineage as the example. The raw data is static except for:
+
+- `04_weekly_orders_change_batch.sql`
+- `05_weekly_orders_change_batch_2.sql`
+- `06_weekly_orders_change_batch_3.sql`
+
+After one batch, the next State run should rebuild the three affected Abra POS staging views and their affected descendants while reusing unrelated branches. A subsequent run without another batch should return to reuse.
 
 ### 3. Show prepared job evidence — 5 minutes
 
 Walk through saved runs rather than waiting for execution:
 
-- broad benchmark before/after;
+- State-disabled repeated run;
+- first State-enabled baseline run;
+- second State-enabled unchanged/reuse run;
+- post-ingestion changed-data run;
 - CI `state:modified+` before;
 - cautious indirect test selection after;
 - explicit modified-incremental validation;
@@ -56,18 +80,18 @@ Walk through saved runs rather than waiting for execution:
 
 Connect gaps in test and state configuration to cost: broad selection repeats expensive work, while overly narrow selection can miss the assumptions that keep incremental and join behavior safe.
 
-Keep contracts as supporting context. The module focus is avoiding unnecessary warehouse work without weakening validation.
-
 ### 4. Review the live State result — 2 minutes
 
-Compare the live run with the prepared no-reuse run:
+Compare the live run with both the State-disabled run and the first State-enabled baseline:
 
-- selected and reused work;
+- selected, built, and reused work;
 - runtime;
-- credits or warehouse time; and
-- any nodes that correctly rebuilt.
+- credits or warehouse time;
+- staging-view eligibility; and
+- any nodes that correctly rebuilt because of source changes or incremental SQL changes.
 
-If the job is still queued or running, switch to the saved successful after run and keep the workshop moving.
+If the job is still queued or running, switch to the saved second State-enabled run and keep the workshop moving.
+
 
 ### 5. Start the closing full build — 1 minute
 
