@@ -1,7 +1,8 @@
 ----------------------------------------------------------------------
 -- 1. QUERIES AGAINST DIM_WIZARDS
 ----------------------------------------------------------------------
-
+-- These are the compiled queries in analyses/
+-- Update them with your own refs before running!
 -- For unoptimized models
 
 -- Query 1: guild_tier_customer_value
@@ -354,8 +355,10 @@ with base as (
     from apothecaries.dbt_jstayton_costs_marts.fct_order_items as order_items
     left join apothecaries.dbt_jstayton_costs_marts.dim_potions as potions
         on order_items.potion_sku = potions.potion_sku
+    inner join apothecaries.dbt_jstayton_costs_marts.dim_dates as dates
+        on order_items.ordered_date = dates.date_day
     where order_items.ordered_date between '2026-04-01' and '2026-06-30'
-      and order_items.shop_id in ('SHP-01', 'SHP-04', 'SHP-09', 'SHP-14')
+      and not dates.is_weekend
       and potions.is_regulated
 ),
 
@@ -413,7 +416,6 @@ with base as (
     left join apothecaries.dbt_jstayton_costs_marts.dim_potions as potions
         on order_items.potion_sku = potions.potion_sku
     where order_items.ordered_date between '2026-04-01' and '2026-06-30'
-      and order_items.shop_id in ('SHP-01', 'SHP-04', 'SHP-09', 'SHP-14')
 ),
 
 final as (
@@ -534,8 +536,10 @@ with base as (
     from apothecaries.dbt_jstayton_costs_marts.fct_order_items__optimized as order_items
     left join apothecaries.dbt_jstayton_costs_marts.dim_potions as potions
         on order_items.potion_sku = potions.potion_sku
+    inner join apothecaries.dbt_jstayton_costs_marts.dim_dates as dates
+        on order_items.ordered_date = dates.date_day
     where order_items.ordered_date between '2026-04-01' and '2026-06-30'
-      and order_items.shop_id in ('SHP-01', 'SHP-04', 'SHP-09', 'SHP-14')
+      and not dates.is_weekend
       and potions.is_regulated
 ),
 
@@ -593,7 +597,6 @@ with base as (
     left join apothecaries.dbt_jstayton_costs_marts.dim_potions as potions
         on order_items.potion_sku = potions.potion_sku
     where order_items.ordered_date between '2026-04-01' and '2026-06-30'
-      and order_items.shop_id in ('SHP-01', 'SHP-04', 'SHP-09', 'SHP-14')
 ),
 
 final as (

@@ -75,7 +75,7 @@ final as (
         -- timestamps
         orders.ordered_at,
         payment_rollup.last_paid_at,
-        greatest(
+        greatest_ignore_nulls(
             orders.ingested_at,
             item_totals.item_source_updated_at,
             payment_rollup.payment_source_updated_at

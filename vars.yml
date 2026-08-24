@@ -1,0 +1,31 @@
+vars:
+# ---------------------------------------------------------------------------
+# the raw order window, used by dim_dates' date spine
+# ---------------------------------------------------------------------------
+  date_spine_start: "2023-01-01" # earliest customer signup precedes first order
+  date_spine_end: "2026-12-31"
+  
+# ---------------------------------------------------------------------------
+# Cost Optimization Package Customizations
+# ---------------------------------------------------------------------------
+
+# Project / Account Configs
+  dbt_cost_optimization_enabled: false
+  snowflake_enterprise_edition: false
+  credit_rate_usd: 3
+
+# Materialization Default Overrides
+  table_materialization_lookback_days: 15
+  table_materialization_min_query_count: 20
+  suppress_staging_materialization_recs: true
+  incremental_candidates_lookback_days: 15
+  incremental_candidates_min_build_time_sec: 60
+  incremental_candidates_min_compute_waste_avg_build_sec: 15
+  incremental_candidates_min_compute_waste_score: 2
+  incremental_candidates_min_size_gb: 0
+  incremental_candidates_min_qualified_build_days: 1
+
+# Clustering Default Overrides
+  clustering_candidates_min_size_gb: 1
+  clustering_candidates_min_query_count: 1
+  clustering_candidates_lookback_days: 15

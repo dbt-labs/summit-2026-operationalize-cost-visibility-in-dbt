@@ -2,6 +2,9 @@ version: 2
 
 models:
   - name: int_orders_with_payments
+    config:
+      tags: [unoptimized]
+
     description: >
       Order grain enriched with line-item totals and rolled-up payment
       behavior (net revenue, amount paid, split/failed/refund flags).

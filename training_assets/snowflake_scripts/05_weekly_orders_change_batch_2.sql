@@ -1,23 +1,19 @@
--- Training script: fct_orders ingestion batch 1 of 3
---
--- Simulates a small source delivery against a large historical order fact.
--- Every affected record receives one shared watermark so the optimized merge
--- model can select exactly eight changed parent order IDs.
+-- Training script: fct_orders ingestion batch 2 of 3
 --
 -- Change mix (18 raw records):
 --   - 4 new orders
 --   - 7 order items for those orders
 --   - 3 successful payments for those orders
 --   - 2 corrections to historical orders
---   - 2 late refunds for other historical orders
+--   - 1 late refund and 1 late successful payment for other historical orders
 --
--- Run once after establishing the baseline targets. The tracking tables are
--- consumed by 07_reset_fct_orders_workshop.sql after evidence collection.
+-- Run after batch 1 and its model builds. The shared watermark should produce
+-- four inserts and four historical-key updates in fct_orders__optimized.
 
 use database apothecaries;
 use schema raw;
 
-set workshop_batch_name = 'batch_1_orders_and_refunds';
+set workshop_batch_name = 'batch_2_orders_and_late_payments';
 set batch_ingested_at = current_timestamp()::timestamp_ntz;
 
 create table if not exists fct_orders_workshop_batch_manifest (
@@ -75,13 +71,13 @@ select
 from weekly_batch_keys as batch
 inner join (
     select * from values
-        (1, 1, 'POT-0026', '2', '861'),
-        (1, 2, 'POT-0003', '1', '455'),
-        (2, 3, 'POT-0004', '1', '1591'),
-        (2, 4, 'POT-0003', '2', '504'),
-        (3, 5, 'POT-0059', '1', '1029'),
-        (3, 6, 'POT-0034', '1', '719'),
-        (4, 7, 'POT-0016', '4', '445')
+        (1, 1, 'POT-0011', '1', '775'),
+        (1, 2, 'POT-0068', '3', '540'),
+        (2, 3, 'POT-0042', '2', '1190'),
+        (3, 4, 'POT-0074', '1', '875'),
+        (3, 5, 'POT-0099', '2', '1325'),
+        (4, 6, 'POT-0021', '4', '390'),
+        (4, 7, 'POT-0055', '1', '1660')
 ) as definitions (
     batch_order_number,
     line_number,
@@ -103,9 +99,9 @@ select
 from weekly_batch_keys as batch
 inner join (
     select * from values
-        (1, 1, 'guild_credit', '2077', '2026-08-11T09:27:00Z'),
-        (2, 2, 'coin', '2308', '2026-08-11 10:31:11'),
-        (3, 3, 'crystal_transfer', '1748', '2026-08-11T11:58:26Z')
+        (1, 1, 'coin', '2395', '2026-08-18 08:41:00'),
+        (2, 2, 'guild_credit', '2380', '2026-08-18T10:06:00Z'),
+        (4, 3, 'crystal_transfer', '3220', '2026-08-18 15:12:00')
 ) as definitions (
     batch_order_number,
     payment_number,
@@ -122,7 +118,7 @@ select
     definitions.order_id,
     definitions.method,
     definitions.amount_copper,
-    'refunded' as status,
+    definitions.status,
     definitions.paid_at,
     $batch_ingested_at as ingested_at
 from (
@@ -131,24 +127,24 @@ from (
 ) as batch
 cross join (
     select * from values
-        (4, 'ORD-000025000', 'coin', '403', '2026-08-11 14:14:47'),
-        (5, 'ORD-000075000', 'guild_credit', '4754', '2026-08-11T14:45:32Z')
+        (4, 'ORD-000125002', 'coin', '650', 'refunded', '2026-08-18T16:20:00Z'),
+        (5, 'ORD-000175002', 'crystal_transfer', '1800', 'success', '2026-08-18 17:05:00')
 ) as definitions (
     payment_number,
     order_id,
     method,
     amount_copper,
+    status,
     paid_at
 );
 
 begin;
 
--- Preserve the original values before the first workshop mutation.
 merge into fct_orders_workshop_order_backup as target
 using (
     select order_id, status, discount_copper, ingested_at
     from raw_orders
-    where order_id in ('ORD-000050000', 'ORD-000100000')
+    where order_id in ('ORD-000125000', 'ORD-000150000')
 ) as source
 on target.order_id = source.order_id
 when not matched then insert (
@@ -176,33 +172,32 @@ insert into raw_orders (
 select
     order_id,
     case batch_order_number
-        when 1 then 'WIZ-00000123'
-        when 2 then 'WIZ-00004567'
-        when 3 then 'WIZ-00008910'
-        when 4 then 'WIZ-00012345'
+        when 1 then 'WIZ-00023456'
+        when 2 then 'WIZ-00034567'
+        when 3 then 'WIZ-00045678'
+        when 4 then 'WIZ-00056789'
     end as customer_id,
     case batch_order_number
-        when 1 then 'SHP-04'
-        when 2 then 'SHP-01'
-        when 3 then 'SHP-13'
-        when 4 then 'SHP-09'
+        when 1 then 'SHP-02'
+        when 2 then 'SHP-07'
+        when 3 then 'SHP-11'
+        when 4 then 'SHP-15'
     end as shop_id,
     case batch_order_number
-        when 1 then '2026-08-11T09:15:00Z'
-        when 2 then '2026-08-11 10:22:11'
-        when 3 then '2026-08-11T11:44:26Z'
-        when 4 then '2026-08-11 13:31:52'
+        when 1 then '2026-08-18 08:30:00'
+        when 2 then '2026-08-18T09:55:00Z'
+        when 3 then '2026-08-18 12:10:00'
+        when 4 then '2026-08-18T15:00:00Z'
     end as ordered_at,
     'completed' as status,
     case batch_order_number
-        when 1 then 'in_store'
-        when 2 then 'courier_owl'
+        when 1 then 'courier_owl'
+        when 2 then 'in_store'
         when 3 then 'marketplace'
-        when 4 then 'in_store'
+        when 4 then 'courier_owl'
     end as channel,
     case batch_order_number
-        when 1 then '100'
-        when 3 then '200'
+        when 2 then '150'
         else '0'
     end as discount_copper,
     $batch_ingested_at as ingested_at
@@ -247,15 +242,15 @@ from weekly_batch_payments;
 update raw_orders
 set
     discount_copper = case order_id
-        when 'ORD-000050000' then '275'
-        when 'ORD-000100000' then '0'
+        when 'ORD-000125000' then '125'
+        when 'ORD-000150000' then '0'
     end,
     status = case order_id
-        when 'ORD-000050000' then 'returned'
-        when 'ORD-000100000' then 'completed'
+        when 'ORD-000125000' then 'completed'
+        when 'ORD-000150000' then 'cancelled'
     end,
     ingested_at = $batch_ingested_at
-where order_id in ('ORD-000050000', 'ORD-000100000');
+where order_id in ('ORD-000125000', 'ORD-000150000');
 
 insert into fct_orders_workshop_batch_manifest (
     batch_name,
@@ -274,7 +269,7 @@ select $workshop_batch_name, $batch_ingested_at, 'RAW_PAYMENTS', payment_id, 'IN
 from weekly_batch_payments
 union all
 select $workshop_batch_name, $batch_ingested_at, 'RAW_ORDERS', column1, 'UPDATE'
-from values ('ORD-000050000'), ('ORD-000100000');
+from values ('ORD-000125000'), ('ORD-000150000');
 
 commit;
 
