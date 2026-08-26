@@ -18,12 +18,14 @@ vars:
   table_materialization_lookback_days: 15
   table_materialization_min_query_count: 20
   suppress_staging_materialization_recs: true
-  incremental_candidates_lookback_days: 15
+  incremental_candidates_lookback_days: 7
   incremental_candidates_min_build_time_sec: 60
   incremental_candidates_min_compute_waste_avg_build_sec: 15
   incremental_candidates_min_compute_waste_score: 2
   incremental_candidates_min_size_gb: 0
   incremental_candidates_min_qualified_build_days: 1
+  incremental_candidates_roi_high_build_time_sec: 15
+  incremental_candidates_roi_medium_build_time_sec: 10
 
 # Clustering Default Overrides
   clustering_candidates_min_size_gb: 1
