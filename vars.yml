@@ -14,10 +14,12 @@ vars:
   snowflake_enterprise_edition: false
   credit_rate_usd: 3
 
-# Materialization Default Overrides
+# Table Materialization Default Overrides
   table_materialization_lookback_days: 15
   table_materialization_min_query_count: 20
   suppress_staging_materialization_recs: true
+
+# Incremental Materialization Default Overrides
   incremental_candidates_lookback_days: 7
   incremental_candidates_min_build_time_sec: 60
   incremental_candidates_min_compute_waste_avg_build_sec: 15
