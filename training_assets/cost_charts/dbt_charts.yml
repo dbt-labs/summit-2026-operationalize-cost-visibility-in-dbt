@@ -1,0 +1,34 @@
+# dbt-charts project config for the Merlin & Co. Apothecaries cost
+# optimization workshop results. Boards live in charts/ alongside this file
+# (dct convention: project root = wherever dbt_charts.yml sits).
+#
+# Deliberately placed under training_assets/ rather than the repo root, one
+# level away from the workshop's own dbt_project.yml. This board doesn't
+# use ref()/source(), so it doesn't need to share that dbt project - it
+# only needs *a* dbt_project.yml as a sibling (see dbt_project.yml in this
+# same folder) to satisfy dct's profile-resolution requirement.
+#
+# The views this board reads live in a separate, trainer-managed schema
+# (APOTHECARIES.DBT_JSTAYTON_DBT_COST_OPTIMIZATION) that already contains
+# the computed recommendations, not in an attendee's own dev schema.
+# Queries use fully qualified table references rather than ref(), so no
+# dbt project is required for the board to run.
+#
+# `profile: merlinco_apothecaries` intentionally reuses the SAME profile
+# name attendees already configure in ~/.dbt/profiles.yml to run the
+# workshop's own `dbt build` (see dbt_project.yml at the repo root and
+# profiles.example.yml) - no separate setup needed for this board.
+# CAVEAT: this assumes that profile's role has read access to
+# APOTHECARIES.DBT_JSTAYTON_DBT_COST_OPTIMIZATION, a schema owned by the
+# trainer account, not the attendee's own schema. Confirm the shared
+# workshop role has been granted SELECT there before the event - see
+# README.md in this folder.
+
+server:
+  port: 8501
+
+sources:
+  cost_optimization:
+    type: dbt_profile
+    profile: merlinco_apothecaries
+    target: dev

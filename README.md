@@ -79,6 +79,7 @@ seeds/large_data/            # portable raw-data seed baseline
 training_assets/
 ├── demo_outlines/           # facilitator-ready plans for Demos 00–06
 ├── snowflake_scripts/       # setup and trainer-managed history generation
+├── cost_charts/             # dbt-charts dashboard of cost-optimization results (see its README)
 ├── README.md                # trainer handoff
 └── TODO.md                  # current delivery plan and remaining work
 analyses/

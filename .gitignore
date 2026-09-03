@@ -29,3 +29,4 @@ logs/
 # never commit real credentials
 profiles.yml
 dbt_internal_packages/
+.claude/settings.local.json
