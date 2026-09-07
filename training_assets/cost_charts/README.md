@@ -112,12 +112,6 @@ directly and never calls `ref()` or `source()`.
 - **PDF export is broken** in this version (`ERR-INTERNAL`: "The SVG's
   nesting depth is too high"). Use `--format html` or `--format png`
   instead.
-- **The "Warehouse optimizations" table paginates** to 1 row per page even
-  though there are only 2 rows total. Both rows are correct and complete -
-  confirmed directly - but a viewer who doesn't click to page 2 will miss
-  the second row. dct's own validator confirms table charts use "a fixed
-  sizing contract" with no supported height override, so there's no known
-  fix on the board-authoring side.
 - Every SQL result column name is **lowercased** by dct regardless of how
   it's written in the query - if you add new queries/charts, alias columns
   in lowercase (`AS my_column`, not `AS MY_COLUMN`) or field references

@@ -66,13 +66,6 @@ text: |
   definition of what counts as a distinct recommendation differs from a
   raw row count on `VW_SNOWFLAKE__OPTIMIZATION_BACKLOG` (23 rows).
 
-  The "Warehouse optimizations" table below shows 1 row with a page 2 -
-  both its rows are correct and complete (verified directly), but dct
-  paginates this table to 1 row per page in this layout and there is no
-  supported way to give a table chart more room (`dct` rejects
-  `min_height` on table styles outright: "uses a fixed sizing contract").
-  Click through to see both rows, or read them off `VW_SNOWFLAKE__WAREHOUSE_OPTIMIZATIONS`
-  directly.
 
 queries:
   # ---- KPI row -------------------------------------------------------
@@ -83,9 +76,14 @@ queries:
       SUM(QUICK_WIN_COUNT) AS quick_wins
     FROM APOTHECARIES.DBT_JSTAYTON_DBT_COST_OPTIMIZATION.VW_SNOWFLAKE__COST_SAVINGS_SUMMARY
 
-  user_cost: |
-    SELECT ESTIMATED_ANNUAL_COST_USD AS annual_cost
-    FROM APOTHECARIES.DBT_JSTAYTON_DBT_COST_OPTIMIZATION.VW_SNOWFLAKE__USER_LEVEL_COST_ATTRIBUTION
+  # Replaces an earlier per-user-cost KPI ($83.83/yr for one attendee user)
+  # that invited a meaningless comparison against the $22,458 headline
+  # figure. This is the actual biggest single line item on the board.
+  top_recommendation: |
+    SELECT ESTIMATED_ANNUAL_SAVINGS_USD AS savings, RECOMMENDATION AS recommendation
+    FROM APOTHECARIES.DBT_JSTAYTON_DBT_COST_OPTIMIZATION.VW_SNOWFLAKE__WAREHOUSE_OPTIMIZATIONS
+    ORDER BY savings DESC
+    LIMIT 1
 
   # ---- Savings by domain (cost vs. savings) ---------------------------
   # dct lowercases all result column names regardless of SQL casing, so
@@ -171,13 +169,18 @@ queries:
 
   # Excludes __optimized rows, same as backlog_ranked and scoped_models,
   # so this table doesn't surface trainer/take-home answer-key models to
-  # an attendee audience.
+  # an attendee audience. primary_recommendation and root_cause are
+  # dropped from the SELECT: confirmed (2026-09-07) that every one of
+  # these 4 rows shares the same value for both ("Apply incremental
+  # config: merge" / "Query is expensive because it rebuilds the full
+  # table every run"), so 2 of 4 columns were repeating identical text 4
+  # times. That fact is stated once in the chart's subtitle below
+  # instead. If a future snapshot has models with genuinely different
+  # recommendations/root causes, re-add both columns here.
   cross_domain_detail: |
     SELECT
       MODEL_NAME AS model_name,
-      SIGNAL_COUNT AS signal_count,
-      PRIMARY_RECOMMENDATION AS primary_recommendation,
-      ROOT_CAUSE AS root_cause
+      SIGNAL_COUNT AS signal_count
     FROM APOTHECARIES.DBT_JSTAYTON_DBT_COST_OPTIMIZATION.VW_SNOWFLAKE__CROSS_DOMAIN_INSIGHTS
     WHERE MODEL_NAME NOT ILIKE '%__optimized'
     ORDER BY signal_count DESC
@@ -210,14 +213,16 @@ charts:
       value:
         format: integer
 
-  user_cost_kpi:
-    label: "Workshop user cost (annualized)"
-    query: user_cost
+  top_recommendation_kpi:
+    label: "Top single recommendation"
+    query: top_recommendation
     type: kpi
-    value: annual_cost
+    value: savings
     style:
       value:
         format: currency
+    support:
+      value: recommendation
 
   domain_bar:
     title: "Cost vs. savings by domain"
@@ -261,6 +266,17 @@ charts:
     sort:
       by: savings
       order: desc
+    # KNOWN COSMETIC ISSUE, not fixed: the "Remaining N items" catch-all
+    # bar gets a full categorical hue from `color: domain`, competing
+    # visually with the three real domains as if it were a fourth one.
+    # Tried `conditional_formatting` on the `domain` column to force it
+    # gray - dct rejects this outright: "chart.color conflicts with
+    # conditional_formatting rules on column 'domain' ... Use one
+    # surface." The only other lever, style.color.categorical.palette,
+    # takes a positional list of color stops matched to the categorical
+    # domain's encounter/sort order - fixable, but only safely with a
+    # rendered check of which position 'various' actually lands in,
+    # which wasn't available when this was last touched. Left as-is.
     style:
       orientation: horizontal
       number_format: currency
@@ -282,6 +298,9 @@ charts:
         savings:
           label: Est. annual savings
           format: currency
+          scale:
+            background:
+              palette: dbt-seq-blue
         suggested_clustering_key:
           label: Suggested clustering key
         incremental_recommendation_status:
@@ -292,6 +311,13 @@ charts:
     type: table
     query: warehouse_detail
     style:
+      # pagination.enabled: false was untried in the earlier investigation
+      # (only min_height, which genuinely doesn't exist on tables, and
+      # page_rows, which the physical-fit check overrode). Verify this
+      # actually shows both rows on one page, not just suppresses the
+      # paginator UI while still clipping - render-tested below.
+      pagination:
+        enabled: false
       columns:
         warehouse_name:
           label: Warehouse
@@ -307,6 +333,7 @@ charts:
 
   cross_domain_table:
     title: "Cross-domain insights"
+    subtitle: "All 4 models share the same root cause (rebuilds the full table every run) and the same fix (apply incremental config: merge)"
     type: table
     query: cross_domain_detail
     style:
@@ -315,10 +342,6 @@ charts:
           label: Model
         signal_count:
           label: Signals
-        primary_recommendation:
-          label: Recommendation
-        root_cause:
-          label: Root cause
 
 rows:
   - title: "Headline"
@@ -331,7 +354,7 @@ rows:
           col_span: 6
         - item: quick_wins_kpi
           col_span: 6
-        - item: user_cost_kpi
+        - item: top_recommendation_kpi
           col_span: 6
 
   - cols:
@@ -345,14 +368,12 @@ rows:
     cols:
       - scoped_models_table
 
-  # warehouse_table client-side paginates to 1 row per page (2 pages).
-  # dct's own validator confirms table charts use "a fixed sizing
-  # contract" - style.charts.table.min_height is rejected outright
-  # (ERR-EXTRA-FIELD), so there is no supported way to force more room
-  # for a table in this dct version. Confirmed via DOM inspection that
-  # page 2 holds the correct, complete second row (including the
-  # em-dash fix above) - this is click-through pagination, not data
-  # loss, but a viewer who doesn't click page 2 misses that row.
+  # warehouse_table used to client-side paginate to 1 row per page here
+  # (fixed via style.pagination.enabled: false on the chart above - the
+  # table's own height genuinely grows to fit both rows once pagination
+  # chrome isn't reserving/capping page size; confirmed via the rendered
+  # SVG height and the second row's y-position, both comfortably inside
+  # the box, not clipped).
   - cols:
       - warehouse_table
 
