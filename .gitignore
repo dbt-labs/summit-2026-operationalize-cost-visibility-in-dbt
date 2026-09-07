@@ -30,3 +30,6 @@ logs/
 profiles.yml
 dbt_internal_packages/
 .claude/settings.local.json
+
+# macOS
+.DS_Store
