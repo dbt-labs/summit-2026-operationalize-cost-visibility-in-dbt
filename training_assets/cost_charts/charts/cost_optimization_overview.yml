@@ -9,7 +9,6 @@
 #   VW_SNOWFLAKE__CROSS_DOMAIN_INSIGHTS
 #   VW_SNOWFLAKE__DBT_MODEL_OPTIMIZATIONS
 #   VW_SNOWFLAKE__OPTIMIZATION_BACKLOG
-#   VW_SNOWFLAKE__USER_LEVEL_COST_ATTRIBUTION
 #   VW_SNOWFLAKE__WAREHOUSE_OPTIMIZATIONS
 
 title: "Cost optimization workshop results"
@@ -234,9 +233,7 @@ charts:
     color: metric
     style:
       # stack: none confirmed against src/dbt_charts/data/schemas/yaml/0.5.0.json
-      # (BarChartStyle.stack enum: none/zero/normalize/center). number_format's
-      # accepted values weren't checked past the property existing - confirm
-      # with `dct validate` once installed.
+      # (BarChartStyle.stack enum: none/zero/normalize/center) and render-tested.
       stack: none
       number_format: currency
 
@@ -249,9 +246,9 @@ charts:
     y: savings
     style:
       number_format: currency
-      # endpoint_labels was only seen paired with orientation: horizontal
-      # in the reference examples - confirm it also renders on a vertical
-      # (default-orientation) bar via `dct validate`.
+      # endpoint_labels was only seen paired with orientation: horizontal in
+      # the reference examples, but render-tested here on this vertical
+      # (default-orientation) bar and confirmed to work.
       endpoint_labels:
         visible: true
 
@@ -311,11 +308,11 @@ charts:
     type: table
     query: warehouse_detail
     style:
-      # pagination.enabled: false was untried in the earlier investigation
-      # (only min_height, which genuinely doesn't exist on tables, and
-      # page_rows, which the physical-fit check overrode). Verify this
-      # actually shows both rows on one page, not just suppresses the
-      # paginator UI while still clipping - render-tested below.
+      # pagination.enabled: false (unlike min_height, which genuinely doesn't
+      # exist on tables, and page_rows, which the physical-fit check
+      # overrode) is what actually fixed this - render-tested to confirm
+      # both rows now show on one page instead of just suppressing the
+      # paginator UI while still clipping.
       pagination:
         enabled: false
       columns:

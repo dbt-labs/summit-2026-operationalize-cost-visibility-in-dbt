@@ -12,6 +12,12 @@ it, or `open preview/cost_optimization_overview.html` on macOS). It's a
 self-contained snapshot - no install, no server, no network connection
 needed.
 
+> **Trainer note:** as shipped, this board points at the trainer's own
+> build (`APOTHECARIES.DBT_JSTAYTON_DBT_COST_OPTIMIZATION`). If attendees
+> should be able to run the board as-is (without building their own copy
+> first), grant the shared workshop role `SELECT` on that schema before the
+> event.
+
 ## Run it yourself
 
 1. **Install dbt-charts** (once it's publicly released):
@@ -20,25 +26,25 @@ needed.
    pip install "dbt-charts[snowflake]"
    ```
 
-2. **Build the cost optimization package's models**:
-
-   ```yaml
-   # vars.yml
-   dbt_cost_optimization_enabled: true
-   ```
+2. **Build the cost optimization package's models**, from the repo root:
 
    ```bash
    dbt deps
-   dbt build --select tag:dbt_cost_optimization
+   dbt build --select tag:dbt_cost_optimization --vars '{dbt_cost_optimization_enabled: true}'
    ```
 
-3. **Replace the database and schema.** In
-   `charts/cost_optimization_overview.yml`, find-and-replace every
-   occurrence of `APOTHECARIES.DBT_JSTAYTON_DBT_COST_OPTIMIZATION` with
-   your own `<database>.<schema>` (the package builds into
-   `{{ target.schema }}_dbt_cost_optimization`).
+   Your `~/.dbt/profiles.yml` profile needs a `dev` target (or add
+   `--target <name>` matching whatever your profile actually calls it).
 
-4. **Launch the dashboard**:
+3. **Replace the database and schema.** In
+   `training_assets/cost_charts/charts/cost_optimization_overview.yml`,
+   find-and-replace every occurrence of
+   `APOTHECARIES.DBT_JSTAYTON_DBT_COST_OPTIMIZATION` with your own
+   `<database>.<schema>` (the package builds into
+   `{{ target.schema }}_dbt_cost_optimization`, and your role needs
+   `SELECT` there, which it normally already has on its own schema).
+
+4. **Launch the dashboard**, from `training_assets/cost_charts/`:
 
    ```bash
    dct validate
@@ -46,17 +52,19 @@ needed.
    ```
 
    `dct serve` prints the URL it's bound to (defaults to
-   `http://localhost:8501/cost_optimization_overview/`). Or render a fresh
-   static snapshot instead of serving live:
+   `http://localhost:8501/cost_optimization_overview/`). To render a static
+   snapshot instead of serving live, output somewhere other than
+   `preview/cost_optimization_overview.html` so you don't overwrite the
+   shipped trainer snapshot:
 
    ```bash
-   dct render charts/cost_optimization_overview.yml --format html --output preview/cost_optimization_overview.html
+   dct render charts/cost_optimization_overview.yml --format html --output /tmp/my_preview.html
    ```
 
-This board uses hardcoded table paths instead of `{{ ref(...) }}` because
-`ref()` doesn't yet resolve inside dbt-charts board queries - that's
-expected to be added in a future dbt-charts release, at which point step 3
-goes away.
+This board uses hardcoded table paths instead of `{{ ref(...) }}`:
+`{{ ref(...) }}` currently fails inside dbt-charts 0.5.0 board-defined
+queries (confirmed across every adapter type, not specific to Snowflake),
+so step 3 is a manual workaround until that's fixed upstream.
 
 ## Known limitations (as of dbt-charts 0.5.0)
 
