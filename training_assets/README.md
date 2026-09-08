@@ -69,10 +69,9 @@ No source ingestion runs live. `snowflake_scripts/04_weekly_orders_change_batch.
 - `demo_outlines/00_...` through `06_...`: facilitator-ready plans for the seven workshop modules.
 - `demo_outlines/07_conclusion_notes.md`: slide-ready benchmark interpretation, ROI framing, and closing narration.
 - `snowflake_scripts/`: workshop account setup and trainer-managed source history.
-- `TODO.md`: current delivery decisions, evidence checklist, and remaining work.
-- `docs/training_materials/PRESENTATION_OUTLINE.md`: concise deck narrative.
-- `docs/training_materials/full_demo_operations_guide.md`: data and build operations.
-- `docs/training_materials/jobs.md`: job configuration and live-demo plan.
+- `training_materials/presentation_outline.md`: concise deck narrative.
+- `training_materials/full_demo_operations_guide.md`: data and build operations.
+- `training_materials/jobs_outline.md`: job configuration and live-demo plan.
 
 ## Current benchmark context
 
