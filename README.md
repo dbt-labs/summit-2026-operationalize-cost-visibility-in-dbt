@@ -80,14 +80,13 @@ training_assets/
 ├── demo_outlines/           # facilitator-ready plans for Demos 00–06
 ├── snowflake_scripts/       # setup and trainer-managed history generation
 ├── cost_charts/             # dbt-charts dashboard of cost-optimization results (see its README)
-├── README.md                # trainer handoff
-└── TODO.md                  # current delivery plan and remaining work
+├── training_materials/      # presentation, operations, and jobs guides
+└── README.md                # trainer handoff
 analyses/
 ├── dim_wizards/             # repeated dimension-consumption workload
 └── fct_order_items/         # repeated pruning/clustering workload
 docs/
-├── merlinco/                # style guide, data dictionary, and ERD
-└── training_materials/      # presentation, operations, and jobs guides
+└── merlinco/                # style guide, data dictionary, and ERD
 ```
 
 ## Data setup
@@ -135,7 +134,7 @@ Notes:
 - `--exclude tag:optimized` keeps trainer/take-home answer-key models out of attendee builds.
 - Trainers can use the tag selectors above for controlled benchmark generation.
 
-Local development uses `~/.dbt/profiles.yml` (see `profiles.example.yml`). In dbt Platform environments, the connection is managed there.
+Local development uses `~/.dbt/profiles.yml`. In dbt platform environments, the connection is managed there.
 
 ## Trainer notes
 
@@ -143,10 +142,9 @@ Start with:
 
 - `training_assets/README.md`;
 - `training_assets/demo_outlines/`;
-- `docs/training_materials/PRESENTATION_OUTLINE.md`;
-- `docs/training_materials/full_demo_operations_guide.md`;
-- `docs/training_materials/jobs.md`; and
-- `docs/training_materials/TRAINING_NOTES.md` for the longer planning history.
+- `training_assets/training_materials/presentation_outline.md`;
+- `training_assets/training_materials/full_demo_operations_guide.md`; and
+- `training_assets/training_materials/jobs_outline.md`.
 
 ## Source systems
 
