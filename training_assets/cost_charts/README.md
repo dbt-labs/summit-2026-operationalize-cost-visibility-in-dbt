@@ -1,9 +1,18 @@
 # Cost optimization dashboard (dbt-charts)
 
 A [dbt-charts](https://github.com/dbt-labs/dbt-charts) board visualizing the
-cost optimization package's output: savings by domain and effort category,
-the ranked optimization backlog, per-model recommendations, warehouse
-optimizations, and cross-domain insights.
+cost optimization package's output: a headline KPI row (estimated annual
+savings, recommendation count, quick wins, top single recommendation),
+savings by domain and effort category, the ranked optimization backlog,
+per-model recommendations, warehouse optimizations, and cross-domain
+insights.
+
+The live board files (`dbt_charts.yml`, `charts/`) live at the **repo root**,
+not in this folder. `dct` resolves every `{{ ref(...) }}` call in the queries
+against `target/manifest.json`, and it looks for that manifest relative to
+wherever `dbt_charts.yml` sits - so the board has to sit next to the real
+`dbt_project.yml` for `ref()` to work. This folder just holds this README and
+a static preview snapshot.
 
 ## View without installing anything
 
@@ -12,18 +21,19 @@ it, or `open preview/cost_optimization_overview.html` on macOS). It's a
 self-contained snapshot - no install, no server, no network connection
 needed.
 
-> **Trainer note:** as shipped, this board points at the trainer's own
-> build (`APOTHECARIES.DBT_JSTAYTON_DBT_COST_OPTIMIZATION`). If attendees
-> should be able to run the board as-is (without building their own copy
-> first), grant the shared workshop role `SELECT` on that schema before the
-> event.
+This snapshot reflects the current `ref()`-based, generic version of the
+board. Regenerate it any time with `dct render` (step 4 below) so it stays
+in sync with the board's queries.
 
 ## Run it yourself
 
-1. **Install dbt-charts** (once it's publicly released):
+1. **Install dbt-charts** (0.7.0 or later - `ref()` in board queries doesn't
+   resolve correctly before 0.7.0):
 
    ```bash
    pip install "dbt-charts[snowflake]"
+   # or, if already installed via pipx:
+   pipx upgrade dbt-charts
    ```
 
 2. **Build the cost optimization package's models**, from the repo root:
@@ -36,40 +46,31 @@ needed.
    Your `~/.dbt/profiles.yml` profile needs a `dev` target (or add
    `--target <name>` matching whatever your profile actually calls it).
 
-3. **Replace the database and schema.** In
-   `training_assets/cost_charts/charts/cost_optimization_overview.yml`,
-   find-and-replace every occurrence of
-   `APOTHECARIES.DBT_JSTAYTON_DBT_COST_OPTIMIZATION` with your own
-   `<database>.<schema>` (the package builds into
-   `{{ target.schema }}_dbt_cost_optimization`, and your role needs
-   `SELECT` there, which it normally already has on its own schema).
-
-4. **Launch the dashboard**, from `training_assets/cost_charts/`:
+3. **Compile, so the board's `ref()` calls have a manifest to resolve
+   against**, from the repo root:
 
    ```bash
-   dct validate
+   dbt compile
+   ```
+
+   Re-run this any time the package's models change or get rebuilt -
+   `target/manifest.json` is a snapshot, not live.
+
+4. **Launch the dashboard**, from the repo root:
+
+   ```bash
+   dct validate charts/cost_optimization_overview.yml
    dct serve
    ```
 
    `dct serve` prints the URL it's bound to (defaults to
    `http://localhost:8501/cost_optimization_overview/`). To render a static
-   snapshot instead of serving live, output somewhere other than
-   `preview/cost_optimization_overview.html` so you don't overwrite the
-   shipped trainer snapshot:
+   snapshot instead of serving live:
 
    ```bash
    dct render charts/cost_optimization_overview.yml --format html --output /tmp/my_preview.html
    ```
 
-This board uses hardcoded table paths instead of `{{ ref(...) }}`:
-`{{ ref(...) }}` currently fails inside dbt-charts 0.5.0 board-defined
-queries (confirmed across every adapter type, not specific to Snowflake),
-so step 3 is a manual workaround until that's fixed upstream.
-
-## Known limitations (as of dbt-charts 0.5.0)
-
-- PDF export is broken (`ERR-INTERNAL`: "The SVG's nesting depth is too
-  high"). Use `--format html` or `--format png` instead.
-- Every SQL result column name is lowercased by dct regardless of how it's
-  written in the query - alias new columns in lowercase (`AS my_column`),
-  or `x:`/`y:`/`color:` field references will silently fail to match.
+The board reads exclusively via `ref()` now, so it always reflects whatever
+schema your own `dbt build` materialized into - there's no schema/database
+to find-and-replace, and no shared trainer schema to grant access to.
