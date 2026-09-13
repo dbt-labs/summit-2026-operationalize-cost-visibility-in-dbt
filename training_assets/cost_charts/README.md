@@ -28,7 +28,15 @@ in sync with the board's queries.
 ## Run it yourself
 
 1. **Install dbt-charts** (0.7.0 or later - `ref()` in board queries doesn't
-   resolve correctly before 0.7.0):
+   resolve correctly before 0.7.0). Prefer `uv`:
+
+   ```bash
+   uv tool install "dbt-charts[snowflake]"
+   # to upgrade an existing install:
+   uv tool upgrade dbt-charts
+   ```
+
+   If `uv` isn't available, fall back to `pip`/`pipx`:
 
    ```bash
    pip install "dbt-charts[snowflake]"
