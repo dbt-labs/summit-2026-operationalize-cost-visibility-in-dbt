@@ -13,7 +13,7 @@
 # --select tag:dbt_cost_optimization`, then `dbt compile`, before rendering
 # this board - see training_assets/cost_charts/README.md for the full sequence.
 
-title: "dbt cost optimization recommendations"
+title: "Cost optimization recommendations in dbt"
 notes: "Recommendations from the dbt cost optimization package's gold-layer views."
 source: cost_optimization
 
@@ -296,6 +296,9 @@ charts:
         savings:
           label: Est. annual savings
           format: currency
+          scale:
+            background:
+              palette: dbt-seq-blue
         backlog_status:
           label: Status
 
@@ -335,8 +338,7 @@ rows:
   - cols:
       - backlog_bar
 
-  - title: "Per-model recommendations"
-    cols:
+  - cols:
       - scoped_models_table
 
   # warehouse_table used to client-side paginate here (fixed via
