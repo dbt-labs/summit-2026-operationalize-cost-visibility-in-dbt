@@ -1,0 +1,30 @@
+# dbt-charts project config for the cost optimization package's dashboard.
+# Boards live in charts/ alongside this file (dct convention: project root =
+# wherever dbt_charts.yml sits).
+#
+# Sits at the repo root, next to the real dbt_project.yml, on purpose: every
+# query below uses ref(), and dct only resolves ref()/source() against
+# target/manifest.json read relative to wherever dbt_charts.yml lives - so
+# this board has to share the real project's manifest rather than live under
+# training_assets/ with a standalone stub project. See
+# training_assets/cost_charts/README.md for the full explanation and the
+# build/launch command sequence.
+#
+# Because every query resolves via ref(), the board always reads whatever
+# schema the current profile's `dbt build --select tag:dbt_cost_optimization`
+# actually materialized into - there is no separate trainer/shared schema to
+# grant access to. Build the package's models first, then `dbt compile` to
+# refresh target/manifest.json, before rendering this board.
+#
+# `profile: merlinco_apothecaries` reuses this project's own profile name so
+# no separate setup is needed for the board. A different project reusing
+# this dashboard should swap this to its own profile name.
+
+server:
+  port: 8501
+
+sources:
+  cost_optimization:
+    type: dbt_profile
+    profile: merlinco_apothecaries
+    target: dev
