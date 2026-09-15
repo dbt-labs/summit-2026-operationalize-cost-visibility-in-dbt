@@ -1,6 +1,10 @@
 -- Line-grain fact. One row per potion per order. Carries the order date and
 -- customer/shop FKs (denormalized from the order) for convenient slicing.
 
+{{config(
+    cluster_by = ['ordered_date','shop_id']
+)}}
+
 with order_items as (
     select * from {{ ref('stg_abra_pos__order_items') }}
 ),
