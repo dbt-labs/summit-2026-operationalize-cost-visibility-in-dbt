@@ -6,7 +6,7 @@ version: 2
 sources:
   - name: alembic_ops
     description: "Alembic Ops — production & procurement (shops, suppliers, ingredients, recipes, brews)."
-    database: raw
+    database: apothecaries
     schema: costs_raw
     tables:
       - name: raw_shops

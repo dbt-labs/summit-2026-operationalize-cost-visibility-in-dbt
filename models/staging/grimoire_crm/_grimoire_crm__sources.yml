@@ -6,7 +6,7 @@ version: 2
 sources:
   - name: grimoire_crm
     description: "Grimoire CRM — customers (wizards), guilds, and SCD2 memberships."
-    database: raw
+    database: apothecaries
     schema: costs_raw
     tables:
       - name: raw_customers
