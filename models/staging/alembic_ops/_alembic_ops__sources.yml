@@ -6,8 +6,8 @@ version: 2
 sources:
   - name: alembic_ops
     description: "Alembic Ops — production & procurement (shops, suppliers, ingredients, recipes, brews)."
-    database: raw
-    schema: dbt_jstayton
+    database: apothecaries
+    schema: costs_raw
     tables:
       - name: raw_shops
         description: "Shops (15 rows, 3 per region). region is the canonical spelling."

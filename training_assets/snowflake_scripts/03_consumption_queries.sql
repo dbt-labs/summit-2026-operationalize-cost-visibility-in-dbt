@@ -12,7 +12,7 @@ with base as (
         order_id,
         ordered_date,
         net_revenue_gold
-    from apothecaries.dbt_jstayton_costs_marts.fct_orders
+    from apothecaries.costs_marts.fct_orders
     where ordered_date between '2026-04-01' and '2026-06-30'
 ),
 
@@ -26,7 +26,7 @@ final as (
         sum(base.net_revenue_gold) as total_net_revenue_gold,
         avg(base.net_revenue_gold)::number(38, 2) as average_order_value_gold
     from base
-    left join apothecaries.dbt_jstayton_costs_marts.dim_wizards as wizards
+    left join apothecaries.costs_marts.dim_wizards as wizards
         on base.customer_id = wizards.customer_id
     group by
         wizards.guild_name,
@@ -44,7 +44,7 @@ with base as (
         payment_status,
         paid_date,
         amount_gold
-    from apothecaries.dbt_jstayton_costs_marts.fct_payments
+    from apothecaries.costs_marts.fct_payments
     where paid_date between '2026-04-01' and '2026-06-30'
 ),
 
@@ -56,7 +56,7 @@ final as (
         count(*) as payment_attempt_count,
         sum(base.amount_gold) as total_payment_amount_gold
     from base
-    left join apothecaries.dbt_jstayton_costs_marts.dim_wizards as wizards
+    left join apothecaries.costs_marts.dim_wizards as wizards
         on base.customer_id = wizards.customer_id
     group by
         wizards.membership_tier,
@@ -75,7 +75,7 @@ with base as (
         ordered_date,
         quantity,
         line_revenue_gold
-    from apothecaries.dbt_jstayton_costs_marts.fct_order_items
+    from apothecaries.costs_marts.fct_order_items
     where ordered_date between '2026-04-01' and '2026-06-30'
       and shop_id in ('SHP-01', 'SHP-04', 'SHP-09', 'SHP-14')
 ),
@@ -89,7 +89,7 @@ final as (
         sum(base.quantity) as total_units,
         sum(base.line_revenue_gold) as total_line_revenue_gold
     from base
-    left join apothecaries.dbt_jstayton_costs_marts.dim_wizards as wizards
+    left join apothecaries.costs_marts.dim_wizards as wizards
         on base.customer_id = wizards.customer_id
     group by
         base.shop_id,
@@ -108,7 +108,7 @@ with base as (
         channel,
         ordered_date,
         net_revenue_gold
-    from apothecaries.dbt_jstayton_costs_marts.fct_orders
+    from apothecaries.costs_marts.fct_orders
     where ordered_date between '2026-04-01' and '2026-06-30'
 ),
 
@@ -120,7 +120,7 @@ final as (
         count(*) as order_count,
         sum(base.net_revenue_gold) as total_net_revenue_gold
     from base
-    left join apothecaries.dbt_jstayton_costs_marts.dim_wizards as wizards
+    left join apothecaries.costs_marts.dim_wizards as wizards
         on base.customer_id = wizards.customer_id
     group by
         wizards.home_region,
@@ -140,7 +140,7 @@ with base as (
         order_items.ordered_date,
         order_items.quantity,
         order_items.line_revenue_gold
-    from apothecaries.dbt_jstayton_costs_marts.fct_order_items as order_items
+    from apothecaries.costs_marts.fct_order_items as order_items
     where order_items.ordered_date between '2026-04-01' and '2026-06-30'
       and order_items.shop_id in ('SHP-01', 'SHP-04', 'SHP-09', 'SHP-14')
 ),
@@ -154,9 +154,9 @@ final as (
         sum(base.quantity) as regulated_units,
         sum(base.line_revenue_gold) as regulated_revenue_gold
     from base
-    inner join apothecaries.dbt_jstayton_costs_marts.dim_potions as potions
+    inner join apothecaries.costs_marts.dim_potions as potions
         on base.potion_sku = potions.potion_sku
-    left join apothecaries.dbt_jstayton_costs_marts.dim_wizards as wizards
+    left join apothecaries.costs_marts.dim_wizards as wizards
         on base.customer_id = wizards.customer_id
     where potions.is_regulated
     group by
@@ -179,7 +179,7 @@ with base as (
         order_id,
         ordered_date,
         net_revenue_gold
-    from apothecaries.dbt_jstayton_costs_marts.fct_orders__optimized
+    from apothecaries.costs_marts.fct_orders__optimized
     where ordered_date between '2026-04-01' and '2026-06-30'
 ),
 
@@ -193,7 +193,7 @@ final as (
         sum(base.net_revenue_gold) as total_net_revenue_gold,
         avg(base.net_revenue_gold)::number(38, 2) as average_order_value_gold
     from base
-    left join apothecaries.dbt_jstayton_costs_marts.dim_wizards__optimized as wizards
+    left join apothecaries.costs_marts.dim_wizards__optimized as wizards
         on base.customer_id = wizards.customer_id
     group by
         wizards.guild_name,
@@ -211,7 +211,7 @@ with base as (
         payment_status,
         paid_date,
         amount_gold
-    from apothecaries.dbt_jstayton_costs_marts.fct_payments
+    from apothecaries.costs_marts.fct_payments
     where paid_date between '2026-04-01' and '2026-06-30'
 ),
 
@@ -223,7 +223,7 @@ final as (
         count(*) as payment_attempt_count,
         sum(base.amount_gold) as total_payment_amount_gold
     from base
-    left join apothecaries.dbt_jstayton_costs_marts.dim_wizards__optimized as wizards
+    left join apothecaries.costs_marts.dim_wizards__optimized as wizards
         on base.customer_id = wizards.customer_id
     group by
         wizards.membership_tier,
@@ -242,7 +242,7 @@ with base as (
         ordered_date,
         quantity,
         line_revenue_gold
-    from apothecaries.dbt_jstayton_costs_marts.fct_order_items__optimized
+    from apothecaries.costs_marts.fct_order_items__optimized
     where ordered_date between '2026-04-01' and '2026-06-30'
       and shop_id in ('SHP-01', 'SHP-04', 'SHP-09', 'SHP-14')
 ),
@@ -256,7 +256,7 @@ final as (
         sum(base.quantity) as total_units,
         sum(base.line_revenue_gold) as total_line_revenue_gold
     from base
-    left join apothecaries.dbt_jstayton_costs_marts.dim_wizards__optimized as wizards
+    left join apothecaries.costs_marts.dim_wizards__optimized as wizards
         on base.customer_id = wizards.customer_id
     group by
         base.shop_id,
@@ -275,7 +275,7 @@ with base as (
         channel,
         ordered_date,
         net_revenue_gold
-    from apothecaries.dbt_jstayton_costs_marts.fct_orders__optimized
+    from apothecaries.costs_marts.fct_orders__optimized
     where ordered_date between '2026-04-01' and '2026-06-30'
 ),
 
@@ -287,7 +287,7 @@ final as (
         count(*) as order_count,
         sum(base.net_revenue_gold) as total_net_revenue_gold
     from base
-    left join apothecaries.dbt_jstayton_costs_marts.dim_wizards__optimized as wizards
+    left join apothecaries.costs_marts.dim_wizards__optimized as wizards
         on base.customer_id = wizards.customer_id
     group by
         wizards.home_region,
@@ -307,7 +307,7 @@ with base as (
         order_items.ordered_date,
         order_items.quantity,
         order_items.line_revenue_gold
-    from apothecaries.dbt_jstayton_costs_marts.fct_order_items__optimized as order_items
+    from apothecaries.costs_marts.fct_order_items__optimized as order_items
     where order_items.ordered_date between '2026-04-01' and '2026-06-30'
       and order_items.shop_id in ('SHP-01', 'SHP-04', 'SHP-09', 'SHP-14')
 ),
@@ -321,9 +321,9 @@ final as (
         sum(base.quantity) as regulated_units,
         sum(base.line_revenue_gold) as regulated_revenue_gold
     from base
-    inner join apothecaries.dbt_jstayton_costs_marts.dim_potions as potions
+    inner join apothecaries.costs_marts.dim_potions as potions
         on base.potion_sku = potions.potion_sku
-    left join apothecaries.dbt_jstayton_costs_marts.dim_wizards__optimized as wizards
+    left join apothecaries.costs_marts.dim_wizards__optimized as wizards
         on base.customer_id = wizards.customer_id
     where potions.is_regulated
     group by
@@ -352,10 +352,10 @@ with base as (
         order_items.quantity,
         order_items.line_revenue_gold,
         potions.is_regulated
-    from apothecaries.dbt_jstayton_costs_marts.fct_order_items as order_items
-    left join apothecaries.dbt_jstayton_costs_marts.dim_potions as potions
+    from apothecaries.costs_marts.fct_order_items as order_items
+    left join apothecaries.costs_marts.dim_potions as potions
         on order_items.potion_sku = potions.potion_sku
-    inner join apothecaries.dbt_jstayton_costs_marts.dim_dates as dates
+    inner join apothecaries.costs_marts.dim_dates as dates
         on order_items.ordered_date = dates.date_day
     where order_items.ordered_date between '2026-04-01' and '2026-06-30'
       and not dates.is_weekend
@@ -384,7 +384,7 @@ with base as (
         ordered_date,
         quantity,
         line_revenue_gold
-    from apothecaries.dbt_jstayton_costs_marts.fct_order_items
+    from apothecaries.costs_marts.fct_order_items
     where ordered_date between '2026-04-01' and '2026-06-30'
       and shop_id in ('SHP-01', 'SHP-04', 'SHP-09', 'SHP-14')
 ),
@@ -412,8 +412,8 @@ with base as (
         order_items.quantity,
         order_items.line_revenue_gold,
         potions.category
-    from apothecaries.dbt_jstayton_costs_marts.fct_order_items as order_items
-    left join apothecaries.dbt_jstayton_costs_marts.dim_potions as potions
+    from apothecaries.costs_marts.fct_order_items as order_items
+    left join apothecaries.costs_marts.dim_potions as potions
         on order_items.potion_sku = potions.potion_sku
     where order_items.ordered_date between '2026-04-01' and '2026-06-30'
 ),
@@ -443,8 +443,8 @@ with base as (
         order_items.quantity,
         order_items.line_revenue_gold,
         wizards.is_guild_member
-    from apothecaries.dbt_jstayton_costs_marts.fct_order_items as order_items
-    left join apothecaries.dbt_jstayton_costs_marts.dim_wizards as wizards
+    from apothecaries.costs_marts.fct_order_items as order_items
+    left join apothecaries.costs_marts.dim_wizards as wizards
         on order_items.customer_id = wizards.customer_id
     where order_items.ordered_date between '2026-04-01' and '2026-06-30'
       and order_items.shop_id in ('SHP-01', 'SHP-04', 'SHP-09', 'SHP-14')
@@ -488,8 +488,8 @@ with base as (
         order_items.quantity,
         order_items.line_revenue_gold,
         potions.potion_name
-    from apothecaries.dbt_jstayton_costs_marts.fct_order_items as order_items
-    left join apothecaries.dbt_jstayton_costs_marts.dim_potions as potions
+    from apothecaries.costs_marts.fct_order_items as order_items
+    left join apothecaries.costs_marts.dim_potions as potions
         on order_items.potion_sku = potions.potion_sku
     where order_items.ordered_date between '2026-04-01' and '2026-06-30'
       and order_items.shop_id in ('SHP-01', 'SHP-04', 'SHP-09', 'SHP-14')
@@ -533,10 +533,10 @@ with base as (
         order_items.quantity,
         order_items.line_revenue_gold,
         potions.is_regulated
-    from apothecaries.dbt_jstayton_costs_marts.fct_order_items__optimized as order_items
-    left join apothecaries.dbt_jstayton_costs_marts.dim_potions as potions
+    from apothecaries.costs_marts.fct_order_items__optimized as order_items
+    left join apothecaries.costs_marts.dim_potions as potions
         on order_items.potion_sku = potions.potion_sku
-    inner join apothecaries.dbt_jstayton_costs_marts.dim_dates as dates
+    inner join apothecaries.costs_marts.dim_dates as dates
         on order_items.ordered_date = dates.date_day
     where order_items.ordered_date between '2026-04-01' and '2026-06-30'
       and not dates.is_weekend
@@ -565,7 +565,7 @@ with base as (
         ordered_date,
         quantity,
         line_revenue_gold
-    from apothecaries.dbt_jstayton_costs_marts.fct_order_items__optimized
+    from apothecaries.costs_marts.fct_order_items__optimized
     where ordered_date between '2026-04-01' and '2026-06-30'
       and shop_id in ('SHP-01', 'SHP-04', 'SHP-09', 'SHP-14')
 ),
@@ -593,8 +593,8 @@ with base as (
         order_items.quantity,
         order_items.line_revenue_gold,
         potions.category
-    from apothecaries.dbt_jstayton_costs_marts.fct_order_items__optimized as order_items
-    left join apothecaries.dbt_jstayton_costs_marts.dim_potions as potions
+    from apothecaries.costs_marts.fct_order_items__optimized as order_items
+    left join apothecaries.costs_marts.dim_potions as potions
         on order_items.potion_sku = potions.potion_sku
     where order_items.ordered_date between '2026-04-01' and '2026-06-30'
 ),
@@ -624,8 +624,8 @@ with base as (
         order_items.quantity,
         order_items.line_revenue_gold,
         wizards.is_guild_member
-    from apothecaries.dbt_jstayton_costs_marts.fct_order_items__optimized as order_items
-    left join apothecaries.dbt_jstayton_costs_marts.dim_wizards__optimized as wizards
+    from apothecaries.costs_marts.fct_order_items__optimized as order_items
+    left join apothecaries.costs_marts.dim_wizards__optimized as wizards
         on order_items.customer_id = wizards.customer_id
     where order_items.ordered_date between '2026-04-01' and '2026-06-30'
       and order_items.shop_id in ('SHP-01', 'SHP-04', 'SHP-09', 'SHP-14')
@@ -669,8 +669,8 @@ with base as (
         order_items.quantity,
         order_items.line_revenue_gold,
         potions.potion_name
-    from apothecaries.dbt_jstayton_costs_marts.fct_order_items__optimized as order_items
-    left join apothecaries.dbt_jstayton_costs_marts.dim_potions as potions
+    from apothecaries.costs_marts.fct_order_items__optimized as order_items
+    left join apothecaries.costs_marts.dim_potions as potions
         on order_items.potion_sku = potions.potion_sku
     where order_items.ordered_date between '2026-04-01' and '2026-06-30'
       and order_items.shop_id in ('SHP-01', 'SHP-04', 'SHP-09', 'SHP-14')

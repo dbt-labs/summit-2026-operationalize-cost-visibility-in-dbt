@@ -7,8 +7,8 @@ version: 2
 sources:
   - name: abra_pos
     description: "Abracadabra POS — point-of-sale (potions, orders, order items, payments)."
-    database: raw
-    schema: dbt_jstayton
+    database: apothecaries
+    schema: costs_raw
     tables:
       - name: raw_potions
         description: "Potion catalog (120 rows)."
